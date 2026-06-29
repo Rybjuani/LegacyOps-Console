@@ -1,0 +1,10 @@
+LegacyOps-Console generated documentation pack
+
+Files:
+- docs/PRODUCT_VISION.md
+- docs/ARCHITECTURE.md
+- docs/MIGRATION_STRATEGY.md
+- docs/DEMO_SCENARIOS.md
+- docs/SECURITY_NOTES.md
+- CONTRIBUTING.md
+- ROADMAP.md
