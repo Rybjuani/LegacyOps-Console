@@ -1,0 +1,29 @@
+{
+  "name": "@legacyops/demo-data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@legacyops/shared": "workspace:*",
+    "@legacyops/domain": "workspace:*",
+    "@legacyops/audit": "workspace:*",
+    "@legacyops/workflows": "workspace:*",
+    "@legacyops/siebel-bridge": "workspace:*",
+    "@legacyops/migration": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2"
+  }
+}

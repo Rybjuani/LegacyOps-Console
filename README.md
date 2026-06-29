@@ -1,1144 +1,201 @@
 # LegacyOps Console
 
-**LegacyOps Console** es un proyecto open-source de CRM empresarial diseñado para modernizar entornos operativos complejos donde los sistemas CRM heredados todavía están profundamente integrados en flujos críticos del negocio.
+**LegacyOps Console** is an open-source enterprise CRM modernization platform. It combines:
 
-El objetivo no es construir una interfaz superficial ni un simple panel CRUD. El objetivo es diseñar un CRM completo, moderno, intuitivo y extensible, capaz de soportar operaciones de atención al cliente de alto volumen, call centers, mesas de ayuda, flujos de facturación, gestión de casos, procesos de retención, cobranzas, trazabilidad de auditoría e integraciones empresariales.
+1. **A complete CRM core** — Customer 360, cases, workflows, audit, RBAC, billing, contracts, services.
+2. **A Siebel-like bridge** — conceptual adapters that speak Business Objects, Business Components, Integration Objects and Business Services without copying any proprietary schema.
+3. **An anti-corruption layer** — pure-function translators that keep the LegacyOps domain free of legacy coupling.
+4. **A migration engine** — source-of-truth registry, entity/field mapping, dry-runs, conflict detection, reconciliation and rollback.
+5. **Legacy observability** — health, latency and error metrics for the adapter layer, separated from operational CRM metrics.
+6. **A Fake Siebel Lab** — a synthetic Siebel-like backend that reproduces latency, session expiry, permission errors and conflicts.
+7. **A pilot playbook and ROI metrics template** — a controlled path from demo to production.
 
-LegacyOps Console se construye alrededor de una idea central:
-
-> Las operaciones empresariales complejas no deberían requerir meses de capacitación para ejecutar correctamente tareas básicas.
-
-Muchas organizaciones grandes todavía dependen de plataformas CRM antiguas y fuertemente personalizadas porque esos sistemas están conectados con facturación, bases de datos de clientes, contratos, permisos, registros de auditoría, provisión de servicios, telefonía, reclamos, cobranzas y reportes internos. Reemplazarlos directamente es riesgoso. LegacyOps Console aborda este problema con una visión de producto a largo plazo: convertirse en una plataforma CRM completa, mientras permite una migración progresiva desde entornos heredados.
-
----
-
-## Estado del Proyecto
-
-Este proyecto se encuentra en una etapa temprana de diseño y desarrollo.
-
-Las primeras versiones utilizarán datos sintéticos y flujos empresariales simulados para demostrar el concepto del producto, la arquitectura, la experiencia de usuario y la eficiencia operativa.
-
-El objetivo a largo plazo es evolucionar hacia un CRM de nivel productivo que pueda:
-
-1. Reemplazar módulos de CRM heredados de forma progresiva.
-2. Integrarse con sistemas empresariales existentes.
-3. Funcionar como una capa operativa moderna durante procesos de migración.
-4. Convertirse en un CRM independiente para empresas que necesitan flujos de alta complejidad sin la fricción de sistemas legacy.
+> **Status:** early scaffold. Synthetic data only. Not production-ready.
+> See `docs/ENTERPRISE_READINESS_GAP.md` for an honest gap analysis.
 
 ---
 
-## Problema Central
+## Why LegacyOps exists
 
-Los sistemas CRM empresariales utilizados en grandes organizaciones suelen volverse difíciles de operar porque acumulan años de personalizaciones, reglas internas, dependencias ocultas e interfaces de usuario obsoletas.
+Many large organisations still depend on legacy CRM platforms (typically Siebel-like) because those systems are deeply integrated with billing, contracts, identity, telephony, provisioning, collections, audit and reporting. Replacing them is risky. Wrapping them with a thin UI is fragile. Deploying a modern CRM in parallel leads to duplication and abandonment.
 
-Problemas operativos comunes:
+LegacyOps Console takes a different path: it ships its own CRM core while integrating with the legacy system through an explicit anti-corruption layer. Operators get a modern UI now. Modules migrate one at a time, with dry-runs, conflict detection, reconciliation and rollback. ROI is measured before and after each pilot stage.
 
-* Tiempo excesivo de capacitación para nuevos empleados.
-* Navegación compleja entre muchas pantallas.
-* Carga manual de datos repetitiva.
-* Lentitud en la atención al cliente durante llamadas.
-* Alta dependencia de la memoria del operador.
-* Errores frecuentes causados por flujos poco claros.
-* Baja visibilidad del contexto completo del cliente.
-* Dificultad para encontrar la acción, registro o proceso correcto.
-* Alto costo de onboarding y supervisión.
-* Calidad de atención inconsistente entre operadores.
-* Adaptación lenta a nuevas reglas de negocio.
-* Migraciones costosas y riesgosas.
-
-El resultado no es solo mala UX. Se convierte en un problema de negocio: operaciones más lentas, menor productividad, menor satisfacción del cliente, mayores costos de soporte y peor rendimiento comercial.
-
-LegacyOps Console existe para resolver ese problema.
+For the full positioning, see `docs/LEGACYOPS_VS_LEGACY_CRM.md` and `docs/SELLING_TO_SIEBEL_CUSTOMERS.md`.
 
 ---
 
-## Visión del Producto
-
-LegacyOps Console apunta a convertirse en un CRM empresarial completo, diseñado para aportar claridad operativa, velocidad, trazabilidad y seguridad durante procesos de migración.
-
-El sistema debe permitir que un operador, supervisor, analista o administrador trabaje con datos complejos de clientes mediante una interfaz clara, guiada y moderna.
-
-La visión a largo plazo del producto incluye:
-
-* Perfil 360 del cliente.
-* Gestión de cuentas y contratos.
-* Visibilidad de facturación y pagos.
-* Gestión de casos y tickets.
-* Flujos de reclamos y quejas.
-* Flujos de retención y cancelación.
-* Flujos de ventas y upselling.
-* Flujos de cobranzas.
-* Gestión de órdenes de servicio.
-* Historial omnicanal de interacciones.
-* Consola de operador para call center.
-* Panel de supervisión.
-* Base de conocimiento.
-* Motor de workflows.
-* Permisos basados en roles.
-* Registro de auditoría.
-* Reportes y analítica.
-* Herramientas de migración.
-* Adaptadores de integración.
-* Resúmenes y recomendaciones asistidas por IA.
-* Entorno demo empresarial con datos sintéticos.
-
-El objetivo es reducir la fricción operativa sin sacrificar control empresarial, trazabilidad ni profundidad funcional.
-
----
-
-## Principios de Diseño
-
-### 1. CRM Completo, No Solo un Wrapper
-
-LegacyOps Console no está pensado para permanecer únicamente como una capa visual sobre sistemas heredados. El objetivo final es convertirse en una plataforma CRM completa, con su propio modelo de dominio, workflows, permisos, lógica de auditoría y módulos operativos.
-
-Sin embargo, la estrategia de migración debe ser realista. Muchas empresas no pueden reemplazar su CRM central en un solo paso. Por esa razón, LegacyOps Console está diseñado para permitir una adopción progresiva.
-
-### 2. Migración Progresiva
-
-El sistema debe soportar múltiples modos de adopción:
-
-* Modo demo con datos sintéticos.
-* Modo CRM independiente.
-* Modo integración con sistemas externos.
-* Modo híbrido, donde algunos módulos son nativos y otros todavía dependen de backends heredados.
-* Modo migración, donde los módulos legacy se reemplazan paso a paso.
-
-Esto permite que las empresas se modernicen sin asumir un riesgo operativo inaceptable.
-
-### 3. UX Centrada en el Operador
-
-La interfaz debe estar diseñada para uso operativo real, especialmente en entornos de alta presión como call centers, mesas de soporte, operaciones de campo y equipos de back-office.
-
-El operador no debería necesitar memorizar decenas de caminos ocultos. El sistema debe guiar al usuario a través del flujo correcto.
-
-### 4. Menos Pasos, Mejores Decisiones
-
-Cada pantalla debe reducir la carga cognitiva.
-
-La información importante debe estar visible cuando sea necesaria. Las acciones deben ser contextuales. Los workflows deben prevenir errores evitables.
-
-El sistema debe ayudar a responder:
-
-* ¿Quién es este cliente?
-* ¿Qué servicios o productos tiene?
-* ¿Qué ocurrió antes?
-* ¿Qué problema está reportando?
-* ¿Qué acciones están permitidas?
-* ¿Cuál es el próximo mejor paso?
-* ¿Qué debe registrarse?
-* ¿Qué requiere escalamiento?
-* ¿Cuál es el impacto comercial?
-
-### 5. Auditabilidad por Defecto
-
-Toda acción importante debe ser trazable.
-
-Los sistemas empresariales necesitan registros claros de:
-
-* Quién cambió algo.
-* Cuándo ocurrió.
-* Qué cambió.
-* Qué cliente, caso, cuenta o contrato fue afectado.
-* Qué workflow se siguió.
-* Qué sistema externo estuvo involucrado.
-* Si la acción fue manual, automatizada o asistida por IA.
-
-### 6. Arquitectura Preparada para Integraciones
-
-El sistema no debe asumir que todos los datos viven en una sola base de datos.
-
-Las grandes organizaciones suelen tener múltiples fuentes de verdad: CRM, facturación, ERP, sistemas de identidad, telefonía, ticketing, data warehouses y servicios internos personalizados.
-
-LegacyOps Console debe usar adaptadores y límites claros entre servicios para que cada dependencia externa pueda integrarse, simularse o reemplazarse.
-
----
-
-## Usuarios Objetivo
-
-LegacyOps Console está diseñado para organizaciones con operaciones complejas de clientes, incluyendo:
-
-* Empresas de telecomunicaciones.
-* Empresas de seguridad.
-* Servicios públicos.
-* Aseguradoras.
-* Bancos y operaciones fintech.
-* Prestadores de servicios de salud.
-* Empresas de logística.
-* Grandes centros de soporte.
-* Proveedores de servicios B2B.
-* Empresas con dependencia de CRM heredados.
-* Empresas con equipos de atención al cliente de alto volumen.
-
-Roles potenciales de usuario:
-
-* Operadores de atención al cliente.
-* Agentes de call center.
-* Supervisores.
-* Analistas de back-office.
-* Agentes de ventas.
-* Equipos de retención.
-* Equipos de cobranzas.
-* Coordinadores de servicio técnico o de campo.
-* Administradores.
-* Auditores.
-* Analistas de negocio.
-* Equipos de integración IT.
-
----
-
-## Módulos Principales
-
-### 1. Cliente 360
-
-Un perfil unificado del cliente que muestra la información más relevante en un solo lugar.
-
-Funcionalidades planificadas:
-
-* Identidad del cliente.
-* Información de contacto.
-* Documentos e identificadores.
-* Estado de cuenta.
-* Productos y servicios.
-* Contratos.
-* Resumen de facturación.
-* Casos abiertos.
-* Interacciones recientes.
-* Notas.
-* Indicadores de riesgo.
-* Oportunidades comerciales.
-* Riesgo de baja o cancelación.
-* Estado del servicio.
-* Historial de auditoría.
-
-El objetivo es evitar que los operadores tengan que abrir múltiples pantallas desconectadas solo para entender la situación del cliente.
-
----
-
-### 2. Consola de Interacción
-
-Un espacio de trabajo dedicado para interacciones con clientes.
-
-Funcionalidades planificadas:
-
-* Inicio de llamada o sesión.
-* Búsqueda de cliente.
-* Verificación de identidad.
-* Motivo de interacción.
-* Selección de workflow guiado.
-* Acciones contextuales.
-* Soporte de scripts.
-* Notas y resúmenes.
-* Creación de casos.
-* Escalamiento.
-* Registro de resolución.
-* Cierre de interacción.
-
-La consola de interacción debe ayudar a los operadores a resolver casos de manera más rápida y consistente.
-
----
-
-### 3. Gestión de Casos y Tickets
-
-Un módulo completo de gestión de casos para soporte, reclamos, incidentes y seguimiento interno.
-
-Funcionalidades planificadas:
-
-* Creación de casos.
-* Categorías de casos.
-* Prioridad y severidad.
-* Seguimiento de estado.
-* Asignación.
-* Seguimiento de SLA.
-* Escalamiento.
-* Notas internas.
-* Notas visibles para el cliente.
-* Adjuntos.
-* Interacciones vinculadas.
-* Registros de facturación vinculados.
-* Órdenes de servicio vinculadas.
-* Códigos de resolución.
-* Registro de auditoría.
-
----
-
-### 4. Vista de Facturación y Pagos
-
-Un módulo para mostrar información relacionada con facturación sin obligar a los operadores a navegar pantallas legacy complejas.
-
-Funcionalidades planificadas:
-
-* Saldo actual.
-* Últimas facturas.
-* Estado de pago.
-* Estado de deuda.
-* Fechas de vencimiento.
-* Promesas de pago.
-* Disputas.
-* Reclamos de facturación.
-* Ajustes.
-* Solicitudes de reintegro.
-* Historial de pagos.
-* Adaptador externo de facturación.
-
-En las primeras versiones este módulo utilizará datos sintéticos. En versiones futuras debe soportar integraciones con sistemas externos de facturación.
-
----
-
-### 5. Productos, Servicios y Contratos
-
-Un módulo para gestionar lo que el cliente tiene contratado.
-
-Funcionalidades planificadas:
-
-* Productos activos.
-* Estado del servicio.
-* Términos contractuales.
-* Detalles del plan.
-* Datos de instalación.
-* Fechas de activación.
-* Fechas de renovación.
-* Estado de cancelación.
-* Opciones de upgrade.
-* Opciones de downgrade.
-* Cambios de servicio.
-* Órdenes vinculadas.
-
----
-
-### 6. Ventas y Retención
-
-Un módulo para workflows comerciales.
-
-Funcionalidades planificadas:
-
-* Oportunidades de clientes o leads.
-* Recomendaciones de upselling.
-* Flujos de cross-selling.
-* Ofertas de retención.
-* Prevención de cancelaciones.
-* Elegibilidad para campañas.
-* Simulación de ofertas.
-* Notas comerciales.
-* Seguimiento de conversión.
-* Motivos de oportunidad perdida.
-
----
-
-### 7. Cobranzas
-
-Un módulo para recuperación de pagos y flujos relacionados con deuda.
-
-Funcionalidades planificadas:
-
-* Segmentación de deuda.
-* Historial de contacto.
-* Seguimiento de promesas de pago.
-* Nivel de riesgo.
-* Estado de cobranza.
-* Acciones permitidas.
-* Manejo de disputas.
-* Registros de acuerdos de pago.
-* Reglas de escalamiento.
-* Notas de cumplimiento.
-
----
-
-### 8. Base de Conocimiento
-
-Una base de conocimiento interna y buscable para operadores.
-
-Funcionalidades planificadas:
-
-* Artículos.
-* Procedimientos.
-* Guías de resolución de problemas.
-* Documentos de políticas internas.
-* Documentación vinculada a workflows.
-* Búsqueda.
-* Etiquetas.
-* Versionado.
-* Estado de aprobación.
-* Artículos sugeridos según tipo de caso.
-
----
-
-### 9. Motor de Workflows
-
-Un sistema configurable de workflows que guía a los operadores a través de procesos de negocio.
-
-Funcionalidades planificadas:
-
-* Definiciones de workflows.
-* Pasos.
-* Campos obligatorios.
-* Ramas condicionales.
-* Reglas de validación.
-* Restricciones por rol.
-* Disparadores de escalamiento.
-* Criterios de finalización.
-* Eventos de auditoría.
-* Workflows versionados.
-
-El motor de workflows es una de las partes más importantes del proyecto. Transforma procedimientos complejos en flujos operativos guiados.
-
----
-
-### 10. Panel de Supervisión
-
-Un módulo para líderes de equipo y supervisores.
-
-Funcionalidades planificadas:
-
-* Interacciones activas.
-* Casos abiertos.
-* Riesgos de SLA.
-* Productividad de agentes.
-* Casos escalados.
-* Aprobaciones pendientes.
-* Indicadores de capacitación.
-* Patrones comunes de error.
-* Tiempo promedio de atención.
-* Tasa de resolución.
-* Indicadores de calidad.
-
----
-
-### 11. Reportes y Analítica
-
-Una capa de reportes para visibilidad operativa y comercial.
-
-Funcionalidades planificadas:
-
-* Casos por categoría.
-* Tiempo de resolución.
-* Rendimiento de agentes.
-* Motivos de contacto de clientes.
-* Tasas de escalamiento.
-* Problemas de facturación.
-* Resultados de retención.
-* Resultados de ventas.
-* Cuellos de botella en workflows.
-* Impacto de capacitación.
-* Métricas de productividad antes/después.
-
----
-
-### 12. Administración y Permisos
-
-Un módulo administrativo para configurar la plataforma.
-
-Funcionalidades planificadas:
-
-* Usuarios.
-* Roles.
-* Permisos.
-* Equipos.
-* Colas.
-* Configuración de workflows.
-* Reglas de negocio.
-* Visibilidad de campos.
-* Configuración de auditoría.
-* Configuración de integraciones.
-* Gestión de datos demo.
-
----
-
-### 13. Registro de Auditoría
-
-Una capa dedicada de auditoría para trazabilidad empresarial.
-
-Funcionalidades planificadas:
-
-* Acciones de usuarios.
-* Cambios de datos.
-* Eventos de workflow.
-* Llamadas a APIs externas.
-* Validaciones de permisos.
-* Acciones fallidas.
-* Sugerencias generadas por IA.
-* Sobrescrituras manuales.
-* Registros de auditoría exportables.
-
----
-
-### 14. Capa de Integración
-
-Un sistema modular de integración para conectarse con plataformas externas.
-
-Tipos de adaptadores planificados:
-
-* Adaptadores CRM.
-* Adaptadores de facturación.
-* Adaptadores de ticketing.
-* Adaptadores SQL.
-* Adaptadores REST API.
-* Adaptadores de autenticación.
-* Adaptadores de telefonía/CTI.
-* Adaptadores de reporting.
-* Adaptadores de importación/exportación de archivos.
-* Adaptadores de simulación legacy.
-
-El objetivo es hacer que el sistema sea adaptable a entornos empresariales reales sin hardcodear la estructura interna de una empresa específica.
-
----
-
-### 15. Asistencia con IA
-
-Las funcionalidades de IA deben asistir a los operadores, no reemplazar la auditabilidad ni las reglas de negocio.
-
-Funcionalidades planificadas:
-
-* Resumen del historial del cliente.
-* Resumen de casos.
-* Sugerencia del próximo paso.
-* Sugerencia de artículos de base de conocimiento.
-* Redacción de notas.
-* Detección de sentimiento/contexto.
-* Detección de riesgo de escalamiento.
-* Asistente de capacitación.
-* Explicación de workflows.
-* Insights para supervisores.
-
-Todas las acciones asistidas por IA deben estar claramente marcadas y ser auditables.
-
----
-
-## Entorno Demo
-
-Como los datos reales de CRM empresariales son sensibles y difíciles de acceder, el proyecto incluirá un entorno demo sintético.
-
-El entorno demo debe simular:
-
-* Clientes.
-* Cuentas.
-* Contratos.
-* Servicios.
-* Registros de facturación.
-* Historial de pagos.
-* Casos.
-* Reclamos.
-* Interacciones.
-* Notas.
-* Operadores.
-* Supervisores.
-* Workflows.
-* Eventos de auditoría.
-* Reglas de negocio.
-* Demoras y errores de integración.
-
-Esto permite que el proyecto demuestre workflows realistas sin utilizar datos confidenciales de ninguna empresa.
-
----
-
-## Estrategia de Migración
-
-LegacyOps Console está diseñado alrededor de una migración progresiva.
-
-### Fase 1: Demo CRM Sintético
-
-Construir una demo completa con datos falsos y workflows realistas.
-
-Objetivos:
-
-* Demostrar UX.
-* Demostrar arquitectura.
-* Demostrar diseño de workflows.
-* Demostrar velocidad operativa.
-* Mostrar métricas antes/después.
-* Construir valor de portfolio.
-* Crear un entorno demo público.
-
-### Fase 2: Núcleo CRM Independiente
-
-Implementar módulos CRM nativos con una base de datos real y un modelo de dominio interno.
-
-Objetivos:
-
-* Clientes.
-* Cuentas.
-* Productos.
-* Vista de facturación.
-* Casos.
-* Interacciones.
-* Notas.
-* Workflows.
-* Permisos.
-* Registros de auditoría.
-
-### Fase 3: Adaptadores de Integración
-
-Agregar interfaces de adaptadores para sistemas externos.
-
-Objetivos:
-
-* Leer datos desde sistemas externos.
-* Escribir actualizaciones controladas.
-* Simular integraciones legacy.
-* Soportar operaciones híbridas.
-* Mantener aisladas las dependencias externas.
-
-### Fase 4: Preparación para Piloto
-
-Preparar el sistema para un piloto controlado con una empresa real.
-
-Objetivos:
-
-* Endurecimiento de seguridad.
-* Acceso basado en roles.
-* Exportación de auditoría.
-* Importación de datos.
-* Workflows configurables.
-* Manejo de errores.
-* Documentación de despliegue.
-* Herramientas administrativas.
-* Monitoreo básico de SLA.
-
-### Fase 5: Migración Empresarial
-
-Soportar el reemplazo progresivo de módulos legacy.
-
-Objetivos:
-
-* Reemplazar workflows seleccionados.
-* Migrar datasets seleccionados.
-* Mantener los sistemas legacy disponibles durante la transición.
-* Medir mejoras de productividad.
-* Reducir tiempo de capacitación.
-* Reducir errores operativos.
-* Expandir la cobertura de módulos.
-
----
-
-## Arquitectura Propuesta
-
-La arquitectura debe separar experiencia de usuario, lógica de dominio, persistencia e integraciones.
+## Repository structure
 
 ```text
 legacyops-console/
-│
 ├── apps/
-│   ├── web/                  # Aplicación frontend principal
-│   └── api/                  # API backend
-│
+│   ├── api/                      # Fastify API (TypeScript, ESM)
+│   └── web/                      # React + Vite UI
 ├── packages/
-│   ├── domain/               # Modelos de dominio CRM y reglas de negocio
-│   ├── workflows/            # Definiciones de workflows y motor de flujos
-│   ├── adapters/             # Adaptadores para sistemas externos
-│   ├── audit/                # Lógica de registro de auditoría
-│   ├── permissions/          # RBAC y control de acceso
-│   ├── demo-data/            # Dataset empresarial sintético
-│   └── shared/               # Tipos y utilidades compartidas
-│
-├── docs/
-│   ├── product-vision.md
-│   ├── architecture.md
-│   ├── migration-strategy.md
-│   ├── demo-scenarios.md
-│   └── security-notes.md
-│
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── e2e/
-│
-└── README.md
+│   ├── domain/                   # CRM core domain
+│   ├── shared/                   # Common types and utilities
+│   ├── audit/                    # Audit event factory and in-memory log
+│   ├── permissions/              # RBAC (roles, permissions, can())
+│   ├── workflows/                # Minimal workflow engine + demo workflows
+│   ├── adapters/                 # Vendor-neutral adapter contracts
+│   ├── siebel-bridge/            # Siebel-like bridge + Fake Siebel Lab
+│   ├── migration/                # Source-of-truth registry, dry-run, reconciliation
+│   ├── legacy-observability/     # Health, latency, errors for legacy/adapter layer
+│   └── demo-data/                # Synthetic dataset
+├── docs/                         # Product, architecture, migration, ROI, pilot
+├── package.json
+├── pnpm-workspace.yaml
+├── tsconfig.base.json
+├── vitest.config.ts
+├── .env.example
+└── .gitignore
 ```
 
-Esta estructura es solo un punto de partida y puede cambiar a medida que el proyecto evolucione.
+---
+
+## Stack
+
+- **Monorepo**: pnpm workspaces.
+- **Language**: TypeScript (ESM, ES2022, strict).
+- **API**: Fastify 4.
+- **Web**: React 18 + Vite 5 + react-router 6.
+- **Tests**: Vitest 2.
+- **Data**: in-memory synthetic dataset. No real database in this phase.
+
+> **Decision: Fastify over NestJS.** Fastify is light and fast, and the route modules are organised by domain so a future migration to NestJS controllers would be a refactor, not a rewrite. See `docs/ARCHITECTURE.md`.
 
 ---
 
-## Stack Tecnológico Sugerido
-
-El stack final todavía está abierto, pero un stack inicial sólido podría ser:
-
-### Frontend
-
-* React.
-* TypeScript.
-* Vite o Next.js.
-* Tailwind CSS.
-* Librería de componentes diseñada específicamente para workflows empresariales densos.
-
-### Backend
-
-* Node.js con NestJS o Python con FastAPI.
-* REST API primero.
-* GraphQL opcional más adelante si es necesario.
-* Jobs en segundo plano para imports, exports y sincronización de integraciones.
-
-### Base de Datos
-
-* PostgreSQL para datos relacionales centrales.
-* Redis para caché y colas si es necesario.
-* SQLite para modo demo local liviano si resulta útil.
-
-### Testing
-
-* Tests unitarios para lógica de dominio.
-* Tests de integración para API y comportamiento de base de datos.
-* Tests end-to-end para workflows críticos.
-* Tests de regresión visual para estabilidad de UI.
-* Tests de escenarios sintéticos para flujos de operador.
-
-### Despliegue
-
-* Docker.
-* Docker Compose para desarrollo local.
-* Configuración basada en entornos.
-* Despliegue cloud opcional más adelante.
-
----
-
-## Modelo de Datos: Conceptos Iniciales
-
-Las entidades iniciales de dominio pueden incluir:
-
-* Customer.
-* Account.
-* ContactMethod.
-* Contract.
-* Product.
-* Service.
-* Invoice.
-* Payment.
-* DebtRecord.
-* Case.
-* CaseComment.
-* Interaction.
-* Ticket.
-* Workflow.
-* WorkflowStep.
-* AuditEvent.
-* User.
-* Role.
-* Permission.
-* Team.
-* Queue.
-* KnowledgeArticle.
-* Offer.
-* RetentionAction.
-* CollectionAction.
-
-El modelo debe mantenerse lo suficientemente genérico como para adaptarse a distintas industrias.
-
----
-
-## Alcance del MVP
-
-El primer MVP debe enfocarse en demostrar valor operativo.
-
-Módulos recomendados para el MVP:
-
-1. Búsqueda de cliente.
-2. Perfil 360 del cliente.
-3. Consola de interacción.
-4. Flujo de verificación de identidad.
-5. Resumen de facturación con datos sintéticos.
-6. Creación y seguimiento de casos.
-7. Motor de workflows guiados.
-8. Notas y registro de resolución.
-9. Registro de auditoría.
-10. Panel de supervisión.
-11. Datos demo sintéticos.
-12. Métricas básicas.
-
-El MVP debe responder una pregunta:
-
-> ¿Puede un operador nuevo resolver escenarios realistas de clientes más rápido, con menos errores y menos capacitación?
-
----
-
-## Escenarios Demo de Ejemplo
-
-La demo debe incluir escenarios empresariales realistas, como:
-
-### Escenario 1: Reclamo de Facturación
-
-Un cliente llama porque cree que una factura es incorrecta.
-
-El operador debe poder:
-
-* Buscar al cliente.
-* Verificar identidad.
-* Revisar historial de facturación.
-* Detectar la factura disputada.
-* Abrir un reclamo de facturación.
-* Agregar notas.
-* Asignar prioridad.
-* Generar un número de caso.
-* Cerrar la interacción con un registro claro de auditoría.
-
-### Escenario 2: Riesgo de Cancelación de Servicio
-
-Un cliente quiere cancelar un servicio.
-
-El operador debe poder:
-
-* Abrir el perfil del cliente.
-* Revisar productos activos.
-* Identificar elegibilidad para retención.
-* Seguir un workflow de retención.
-* Ofrecer una alternativa permitida.
-* Registrar la decisión del cliente.
-* Crear un seguimiento si es necesario.
-
-### Escenario 3: Deuda y Promesa de Pago
-
-Un cliente tiene deuda pendiente y quiere negociar un pago.
-
-El operador debe poder:
-
-* Revisar estado de deuda.
-* Consultar historial de pagos.
-* Registrar una promesa de pago.
-* Agregar notas de cumplimiento.
-* Programar seguimiento.
-* Actualizar estado del caso.
-
-### Escenario 4: Reclamo Técnico
-
-Un cliente reporta una falla de servicio.
-
-El operador debe poder:
-
-* Verificar estado del servicio.
-* Revisar reclamos anteriores.
-* Crear un caso técnico.
-* Escalar si es necesario.
-* Vincular el caso al servicio afectado.
-* Proporcionar una ruta clara de resolución.
-
-### Escenario 5: Capacitación de Nuevo Operador
-
-Un operador nuevo debe poder completar workflows básicos con capacitación mínima porque la interfaz guía cada paso.
-
----
-
-## Métricas de Éxito
-
-El proyecto debe medir la mejora operativa con métricas concretas.
-
-Métricas posibles:
-
-* Tiempo promedio de atención.
-* Número de clics por workflow.
-* Número de pantallas usadas por workflow.
-* Tiempo de capacitación requerido.
-* Tasa de error.
-* Tasa de escalamiento.
-* Resolución en primer contacto.
-* Tiempo de finalización de caso.
-* Satisfacción del operador.
-* Tiempo de revisión del supervisor.
-* Completitud de datos.
-* Cumplimiento de workflows.
-* Tiempo de espera del cliente.
-
-La demo debe incluir comparaciones antes/después usando flujos legacy simulados frente a flujos guiados de LegacyOps.
-
----
-
-## Objetivos de UX
-
-LegacyOps Console debe ser:
-
-* Claro.
-* Rápido.
-* Denso pero legible.
-* Guiado.
-* Consistente.
-* Compatible con uso intensivo de teclado.
-* Accesible.
-* Auditable.
-* De baja fricción.
-* Optimizado para jornadas largas de trabajo.
-* Útil tanto para operadores nuevos como experimentados.
-
-La UI debe evitar:
-
-* Acciones críticas ocultas.
-* Modales excesivos.
-* Carga manual repetitiva.
-* Etiquetas de estado poco claras.
-* Contexto de cliente fragmentado.
-* Formularios sobrecargados sin guía.
-* Workflows que dependan solamente de la memoria.
-* UI decorativa que reduzca velocidad operativa.
-
----
-
-## Objetivos de Seguridad y Cumplimiento
-
-Los sistemas CRM empresariales manejan datos sensibles. Incluso en etapas tempranas de desarrollo, el proyecto debe diseñarse teniendo en cuenta la seguridad.
-
-Principios de seguridad planificados:
-
-* Control de acceso basado en roles.
-* Principio de menor privilegio.
-* Registro de auditoría.
-* Validación de entradas.
-* Gestión segura de sesiones.
-* Enmascaramiento de datos sensibles.
-* Reglas de permisos configurables.
-* Separación clara entre datos demo y datos reales.
-* Sin secretos hardcodeados.
-* Sin datos reales de clientes en el repositorio público.
-* Configuración basada en entornos.
-* Registros de auditoría exportables.
-
----
-
-## Posicionamiento Legal y Ético
-
-LegacyOps Console es un proyecto independiente.
-
-No está afiliado, respaldado ni conectado con Oracle, Siebel, Salesforce, Microsoft, SAP ni ningún otro proveedor de CRM.
-
-El proyecto no busca copiar pantallas, código, esquemas, manuales ni workflows confidenciales propietarios de ninguna empresa o proveedor.
-
-El objetivo es construir una plataforma CRM original inspirada en problemas operativos generales presentes en entornos empresariales complejos.
-
-Todas las demos públicas deben usar únicamente datos sintéticos.
-
----
-
-## Por Qué Este Proyecto Importa
-
-El software empresarial heredado muchas veces sobrevive porque reemplazarlo es riesgoso, no porque sea óptimo.
-
-Cuando un CRM se vuelve demasiado difícil de aprender, el costo lo pagan todos los días los operadores, los clientes y el propio negocio.
-
-LegacyOps Console apunta a demostrar que la complejidad empresarial puede manejarse mediante mejor diseño, workflows más sólidos, arquitectura de información más clara y migración progresiva.
-
-Un CRM completo no debería obligar a los usuarios a pelear contra el sistema.
-
-Debería ayudarlos a entender al cliente, seguir el proceso correcto, actuar de forma segura y finalizar el trabajo con confianza.
-
----
-
-## Roadmap de Desarrollo
-
-### Milestone 0: Fundación del Repositorio
-
-* Crear estructura base del proyecto.
-* Agregar README.
-* Agregar documentación de visión de producto.
-* Agregar notas de arquitectura.
-* Agregar setup de desarrollo.
-* Agregar reglas de contribución.
-* Definir modelo de dominio inicial.
-
-### Milestone 1: CRM con Datos Sintéticos
-
-* Agregar clientes falsos.
-* Agregar cuentas falsas.
-* Agregar contratos falsos.
-* Agregar registros de facturación falsos.
-* Agregar casos falsos.
-* Agregar interacciones falsas.
-* Agregar operadores y supervisores falsos.
-
-### Milestone 2: Cliente 360
-
-* Búsqueda de cliente.
-* Perfil de cliente.
-* Resumen de cuenta.
-* Resumen de productos/servicios.
-* Timeline de interacciones.
-* Lista de casos.
-* Resumen de facturación.
-
-### Milestone 3: Consola de Interacción
-
-* Iniciar interacción.
-* Verificar identidad.
-* Seleccionar motivo de contacto.
-* Seguir workflow guiado.
-* Agregar notas.
-* Crear caso.
-* Cerrar caso.
-
-### Milestone 4: Motor de Workflows
-
-* Definir esquema de workflow.
-* Agregar pasos de workflow.
-* Agregar campos obligatorios.
-* Agregar ramas condicionales.
-* Agregar reglas de validación.
-* Agregar eventos de auditoría.
-
-### Milestone 5: Gestión de Casos
-
-* Crear casos.
-* Editar casos.
-* Asignar casos.
-* Cambiar estado.
-* Agregar comentarios.
-* Escalar casos.
-* Monitorear SLA.
-
-### Milestone 6: Panel de Supervisión
-
-* Resumen del equipo.
-* Casos abiertos.
-* Escalamientos.
-* Riesgo de SLA.
-* Métricas de operadores.
-* Cuellos de botella en workflows.
-
-### Milestone 7: Reportes
-
-* Reportes operativos.
-* Métricas de productividad.
-* Métricas de finalización de workflows.
-* Métricas de impacto de capacitación.
-* Reportes exportables.
-
-### Milestone 8: Interfaces de Integración
-
-* Definir contratos de adaptadores.
-* Agregar adaptador legacy mock.
-* Agregar adaptador de facturación mock.
-* Agregar adaptador de ticketing mock.
-* Agregar herramientas de importación/exportación.
-
-### Milestone 9: Versión Preparada para Piloto
-
-* Endurecer permisos.
-* Endurecer auditoría.
-* Mejorar manejo de errores.
-* Agregar documentación de despliegue.
-* Agregar configuración administrativa.
-* Agregar notas de seguridad.
-* Agregar escenarios demo realistas.
-
----
-
-## Desarrollo Local
-
-La configuración de desarrollo será documentada una vez que el stack inicial esté implementado.
-
-Setup futuro esperado:
+## Commands
 
 ```bash
-git clone https://github.com/Rybjuani/LegacyOps-Console.git
-cd LegacyOps-Console
+pnpm install
+pnpm dev          # start API + web in parallel
+pnpm dev:api      # API only (http://localhost:3001)
+pnpm dev:web      # web only (http://localhost:5173)
+pnpm build        # build all packages and apps
+pnpm test         # run all Vitest tests
+pnpm typecheck    # tsc --noEmit across all workspaces
+pnpm lint         # placeholder (see note below)
 ```
 
-Luego, dependiendo del stack seleccionado:
-
-```bash
-npm install
-npm run dev
-```
-
-o:
-
-```bash
-docker compose up --build
-```
-
-Los comandos exactos serán actualizados a medida que el código base evolucione.
+> **Lint note**: ESLint/Prettier are not enforced in this scaffold because the workspace has many cross-package type dependencies that would require additional configuration. The `lint` script is a no-op that documents this. Re-enabling lint is a tracked gap in `docs/ENTERPRISE_READINESS_GAP.md`.
 
 ---
 
-## Objetivos del Repositorio
+## Apps
 
-Este repositorio está pensado para cumplir tres propósitos:
+### `apps/api`
 
-1. Construir una base real de producto.
-2. Demostrar diseño y arquitectura de software empresarial.
-3. Servir como proyecto público de portfolio con valor de negocio práctico.
+Fastify HTTP API. Endpoints cover:
 
-El proyecto debe ser útil incluso antes de una adopción empresarial porque puede demostrar:
+- `/health`
+- `/customers`, `/customers/:id`, `/customers/:id/timeline`, `/customers/:id/billing`, `/customers/:id/cases`
+- `/cases`, `/interactions`
+- `/workflows`, `/workflows/:id/start`, `/workflow-runs/:id/steps/:stepId/complete`
+- `/audit-events`
+- `/legacy/research-notes`, `/legacy/health`, `/legacy/metrics`
+- `/siebel/mock/metadata`, `/siebel/mock/customers`, `/siebel/mock/customers/:id`, `/siebel/mock/service-requests`, `/siebel/mock/business-service/:name/invoke`
+- `/migration/source-of-truth`, `/migration/dry-run`, `/migration/reconciliation/demo`, `/migration/plan`
+- `/roi/demo`
 
-* Pensamiento de producto.
-* Modelado de dominio CRM.
-* UX para workflows complejos.
-* Arquitectura empresarial.
-* Estrategia de migración.
-* Disciplina de testing.
-* Diseño de datos sintéticos.
-* Métricas operativas.
-* Diseño consciente de seguridad.
+### `apps/web`
 
----
+React + Vite UI with the following panels:
 
-## Guía de Contribución
-
-Las contribuciones serán bienvenidas una vez que la estructura base sea estable.
-
-Estándares esperados de contribución:
-
-* Mantener la visión de producto enfocada en entornos empresariales.
-* No agregar datos reales de clientes.
-* No copiar pantallas ni workflows propietarios.
-* Preferir workflows claros por encima de CRUD genérico.
-* Agregar tests para lógica de negocio.
-* Mantener la auditabilidad en mente.
-* Documentar decisiones arquitectónicas.
-* Evitar vendor lock-in.
-* Mantener escenarios demo realistas.
+- **Operational Dashboard** — high-level snapshot.
+- **Customer Search** — searchable customer directory.
+- **Customer 360** — full customer context: account, contacts, services, billing, cases, timeline.
+- **Cases** — native case list with filters.
+- **Workflows** — workflow catalog + run stepper.
+- **Supervisor Dashboard** — team KPIs.
+- **Siebel Bridge Lab** — interactive Fake Siebel Lab: metadata, contacts, business service invoker.
+- **Legacy Observability** — health, latency, errors.
+- **Migration Dry Run** — plan, field mapping, dry-run, reconciliation.
+- **Source of Truth Map** — registry, module statuses, ID mappings.
+- **ROI Metrics** — before/after KPIs.
+- **Integration Mode** — the seven modes documented in `docs/INTEGRATION_MODES.md`.
 
 ---
 
-## No Objetivos
+## Synthetic data warning
 
-LegacyOps Console no debe convertirse en:
-
-* Un clon de ningún CRM propietario.
-* Una simple plantilla de dashboard administrativo.
-* Una aplicación CRUD genérica sin profundidad operativa.
-* Una herramienta dependiente de datos confidenciales.
-* Un sistema que oculte acciones críticas de negocio detrás de IA.
-* Una herramienta de migración que asuma que todas las empresas tienen la misma estructura CRM.
+All data served by the API and the web UI is **fictional**. The dataset is generated by `packages/demo-data/` and cached in memory. No real customer data is supported in this phase.
 
 ---
 
-## Ambición a Largo Plazo
+## Siebel-like Compatibility Strategy
 
-La ambición a largo plazo es construir un CRM capaz de manejar complejidad empresarial con una experiencia de usuario moderna, guiada y operativamente eficiente.
+LegacyOps does **not** copy Siebel. It does **not** depend on Open UI. It does **not** hardcode vendor endpoints. It ships:
 
-LegacyOps Console eventualmente debería permitir que las empresas reduzcan su dependencia de sistemas heredados sin interrumpir toda su operación de golpe.
+- conceptual Siebel-like types in `packages/siebel-bridge/src/contracts/`,
+- bidirectional mapping helpers in `packages/siebel-bridge/src/mapping/`,
+- a Fake Siebel Lab in `packages/siebel-bridge/src/mock/`,
+- integration modes documented in `docs/INTEGRATION_MODES.md`.
 
-El objetivo final es ambicioso:
-
-> Un CRM empresarial completo que sea más fácil de aprender, más rápido de operar, más seguro de auditar y más adaptable que las plataformas legacy tradicionales.
-
----
-
-## Licencia
-
-Licencia por definir.
-
-Opciones recomendadas:
-
-* MIT para máxima apertura.
-* Apache 2.0 para una concesión explícita de patentes.
-* AGPL si el objetivo es forzar la apertura de modificaciones en versiones alojadas.
-
-La licencia final debe seleccionarse antes de la primera versión estable.
+For the full posture, see `docs/SIEBEL_COMPATIBILITY_STRATEGY.md` and `docs/PUBLIC_SIEBEL_RESEARCH_NOTES.md`.
 
 ---
 
-## Disclaimer
+## Progressive Migration Strategy
 
-Este proyecto es independiente y experimental.
+The migration engine in `packages/migration/` provides:
 
-No está listo para producción.
+- `SourceOfTruthRegistry` — per-module, per-field ownership rules.
+- `EntityMapping` / `FieldMapping` — configurable field translation.
+- `IdMappingStore` — external ↔ internal ID resolution without losing auditability.
+- `createDryRunReport` — preview a migration before touching any data.
+- `detectConflicts` — duplicate IDs, missing fields, enum mismatches.
+- `buildReconciliationReport` — source vs target counts after migration.
+- `createRollbackPlan` — explicit rollback steps with a deadline.
+- `ModuleMigrationStatus` — module-level cut-over state.
 
-No incluye datos reales de clientes.
-
-No está afiliado con ningún proveedor de CRM ni con ninguna empresa que utilice sistemas CRM heredados.
-
-Todos los workflows empresariales incluidos en demos públicas deben ser sintéticos, genéricos y legalmente seguros.
+See `docs/MIGRATION_STRATEGY.md` and `docs/INTEGRATION_MODES.md`.
 
 ---
 
-## Autor
+## Documentation index
 
-Creado por [Rybjuani](https://github.com/Rybjuani).
+| Document | Purpose |
+|---|---|
+| `docs/PRODUCT_VISION.md` | Long-term product vision. |
+| `docs/ARCHITECTURE.md` | Architecture overview. |
+| `docs/MIGRATION_STRATEGY.md` | Migration strategy. |
+| `docs/DEMO_SCENARIOS.md` | Demo scenarios. |
+| `docs/SECURITY_NOTES.md` | Security posture. |
+| `docs/PUBLIC_SIEBEL_RESEARCH_NOTES.md` | Public Siebel ecosystem audit. |
+| `docs/SIEBEL_COMPATIBILITY_STRATEGY.md` | How LegacyOps integrates with Siebel-like environments. |
+| `docs/SIEBEL_OBJECT_MAPPING.md` | Conceptual object mapping table. |
+| `docs/SIEBEL_OPENUI_RESEARCH.md` | Optional future role of Open UI. |
+| `docs/SIEBEL_OBSERVABILITY_STRATEGY.md` | Legacy observability strategy. |
+| `docs/PILOT_PLAYBOOK_SIEBEL.md` | Pilot playbook. |
+| `docs/SELLING_TO_SIEBEL_CUSTOMERS.md` | Commercial narrative. |
+| `docs/ANTI_CORRUPTION_LAYER.md` | ACL strategy. |
+| `docs/LEGACYOPS_VS_LEGACY_CRM.md` | Comparison. |
+| `docs/ROI_METRICS.md` | ROI template. |
+| `docs/ENTERPRISE_READINESS_GAP.md` | Honest gap analysis. |
+| `docs/INTEGRATION_MODES.md` | Seven integration modes. |
+| `docs/FAKE_SIEBEL_LAB.md` | Fake Siebel Lab specification. |
+| `ROADMAP.md` | Roadmap. |
+| `CONTRIBUTING.md` | Contributing guide. |
 
-LegacyOps Console se desarrolla como un proyecto CRM open-source ambicioso, enfocado en modernización empresarial, eficiencia operativa y migración progresiva desde entornos legacy complejos.
+---
+
+## Current status
+
+- ✅ Monorepo with pnpm workspaces.
+- ✅ 10 packages: domain, shared, audit, permissions, workflows, adapters, siebel-bridge, migration, legacy-observability, demo-data.
+- ✅ Fastify API with all required endpoints.
+- ✅ React + Vite UI with 12 panels.
+- ✅ Vitest tests across all packages.
+- ✅ Strategic documentation set.
+- ⚠️ Synthetic data only.
+- ⚠️ No real database, no real Siebel adapter, no SSO, no production hardening.
+- ❌ Not production-ready. See `docs/ENTERPRISE_READINESS_GAP.md`.
+
+---
+
+## License
+
+MIT (see repository). No third-party proprietary code is reproduced.
