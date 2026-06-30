@@ -4,23 +4,78 @@
 
 ---
 
-## 1. Why no automated screenshots yet
+## 1. Automated screenshots (Playwright)
 
-Automated screenshots via Playwright were considered for this cycle, but
-adding `@playwright/test` and browser binaries would significantly
-increase CI install time and dependency surface. The team decided to
-defer automated screenshots to a future cycle and document the manual
-flow instead.
+Automated screenshots are now available via Playwright + Chromium. The
+`@playwright/test` package is a devDependency of `apps/web` and is NOT
+part of the main CI `verify` job — screenshots are captured on demand.
 
-This file documents:
+### Quick start
 
-- how to run the API + web locally
-- which pages to capture
-- what each screenshot should demonstrate
+```bash
+pnpm screenshot:web
+```
+
+This script (`scripts/screenshot-web.sh`):
+1. Builds all packages, the API and the web app.
+2. Starts the API on `:3001`.
+3. Starts the web preview server on `:5174` (with `VITE_API_BASE`
+   pointing at the API so the SPA can fetch directly).
+4. Runs the Playwright screenshot spec (`apps/web/tests/screenshots.spec.ts`).
+5. Writes 14 PNGs to `artifacts/screenshots/`.
+6. Stops both servers.
+
+### Prerequisites
+
+- `pnpm install --frozen-lockfile`
+- Playwright Chromium installed. The script runs
+  `npx playwright install chromium` automatically, but if the environment
+  cannot download browsers, install them manually first:
+  ```bash
+  npx playwright install chromium
+  ```
+
+### What is captured
+
+14 screenshots at 1440×900:
+
+| # | File | Page |
+|---|------|------|
+| 01 | `01-dashboard.png` | `/dashboard` |
+| 02 | `02-interaction-console-initial.png` | `/interaction-console` (initial state) |
+| 02b | `02b-interaction-console-final.png` | `/interaction-console` (after full 7-step flow) |
+| 03 | `03-customer-search.png` | `/customers` |
+| 04 | `04-customer-360.png` | `/customers/cust_res_1` |
+| 05 | `05-cases.png` | `/cases` |
+| 06 | `06-workflows.png` | `/workflows` |
+| 07 | `07-supervisor.png` | `/supervisor` |
+| 08 | `08-siebel-bridge-lab.png` | `/siebel-bridge` |
+| 09 | `09-legacy-observability.png` | `/legacy-observability` |
+| 10 | `10-migration-dry-run.png` | `/migration` |
+| 11 | `11-source-of-truth.png` | `/source-of-truth` |
+| 12 | `12-roi-metrics.png` | `/roi` |
+| 13 | `13-integration-mode.png` | `/mode` |
+
+### Screenshots are NOT committed
+
+The `artifacts/` directory is gitignored. Screenshots are binary
+artifacts that change frequently and bloat the repo. Store them in an
+external location (wiki, drive, design tool) if needed.
+
+### Visual audit
+
+See `docs/UI_VISUAL_AUDIT.md` for the audit results based on the
+screenshots captured in this cycle.
 
 ---
 
-## 2. Prerequisites
+## 2. Manual screenshots (alternative)
+
+If Playwright is not available, screenshots can be captured manually.
+
+---
+
+## 3. Prerequisites
 
 ```bash
 pnpm install --frozen-lockfile

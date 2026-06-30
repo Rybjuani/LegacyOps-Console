@@ -5,7 +5,7 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     include: ['packages/**/*.test.ts', 'apps/**/*.test.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', 'apps/web/tests/**'],
     env: {
       // Prevents apps/api/src/server.ts from binding a real port when imported
       // from smoke tests. The server module still exports buildServer(), which
