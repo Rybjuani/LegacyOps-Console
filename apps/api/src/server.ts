@@ -20,6 +20,7 @@ import { registerSiebelMockRoutes } from './routes/siebel.js';
 import { registerMigrationRoutes } from './routes/migration.js';
 import { registerRoiRoutes } from './routes/roi.js';
 import { AppState } from './state.js';
+import { registerRbacPlugin } from './rbac.js';
 
 export async function buildServer() {
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? 'info' } });
@@ -30,6 +31,11 @@ export async function buildServer() {
   });
 
   const state = new AppState();
+
+  // RBAC simulation: reads x-legacyops-role header, defaults to 'operator'.
+  // Logs permission.denied audit events on 403 responses. Not auth — see
+  // docs/SECURITY_NOTES.md and docs/ENTERPRISE_READINESS_GAP.md.
+  await registerRbacPlugin(app, { auditLog: state.auditLog });
 
   await registerHealthRoutes(app, state);
   await registerCustomerRoutes(app, state);
@@ -42,13 +48,17 @@ export async function buildServer() {
   await registerMigrationRoutes(app, state);
   await registerRoiRoutes(app, state);
 
-  app.setErrorHandler((err, _req, reply) => {
-    app.log.error({ err }, 'request error');
-    const status = (err as { statusCode?: number }).statusCode ?? 500;
+  app.setErrorHandler((err, req, reply) => {
+    // PermissionDeniedError: expected client error, do not log at error level
+    const isPermissionDenied = err.name === 'PermissionDeniedError';
+    if (!isPermissionDenied) {
+      app.log.error({ err }, 'request error');
+    }
+    const status = err.statusCode ?? (isPermissionDenied ? 403 : (err as { status?: number }).status) ?? 500;
     reply.status(status).send({
       ok: false,
       error: {
-        code: (err as { code?: string }).code ?? 'INTERNAL',
+        code: (err as { code?: string }).code ?? (isPermissionDenied ? 'FORBIDDEN' : 'INTERNAL'),
         message: err.message ?? 'Internal error'
       }
     });
@@ -62,7 +72,7 @@ async function start() {
     const { app } = await buildServer();
     const port = Number(process.env.PORT ?? 3001);
     await app.listen({ port, host: '0.0.0.0' });
-    console.log(`LegacyOps API listening on :${port}`);
+    console.info(`LegacyOps API listening on :${port}`);
   }
 }
 

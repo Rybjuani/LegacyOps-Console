@@ -2,12 +2,15 @@ import type { FastifyInstance } from 'fastify';
 import type { AppState } from '../state.js';
 import { id as makeId, nowIso } from '@legacyops/shared';
 import type { Interaction } from '@legacyops/domain';
+import { withPermission } from '../rbac.js';
 
 export async function registerInteractionRoutes(app: FastifyInstance, state: AppState) {
-  app.post('/interactions', async (req, reply) => {
+  app.post('/interactions', { preHandler: withPermission('case:create') }, async (req, reply) => {
     const body = req.body as Partial<Interaction> & { actorId?: string; actorRole?: string };
     if (!body.customerId || !body.channel || !body.reason) {
-      return reply.status(400).send({ ok: false, error: { code: 'BAD_REQUEST', message: 'customerId, channel and reason are required' } });
+      return reply
+        .status(400)
+        .send({ ok: false, error: { code: 'BAD_REQUEST', message: 'customerId, channel and reason are required' } });
     }
     const now = nowIso();
     const interaction: Interaction = {
@@ -26,7 +29,7 @@ export async function registerInteractionRoutes(app: FastifyInstance, state: App
     return { ok: true, data: interaction };
   });
 
-  app.get('/interactions', async (req) => {
+  app.get('/interactions', { preHandler: withPermission('customer:read') }, async (req) => {
     const q = req.query as { customerId?: string; caseId?: string };
     let items = state.dataset.interactions;
     if (q.customerId) items = items.filter((i) => i.customerId === q.customerId);

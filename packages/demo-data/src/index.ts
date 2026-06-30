@@ -54,14 +54,70 @@ function int(min: number, max: number): number {
 
 // ---------- Users, teams, queues ----------
 const users: User[] = [
-  { id: 'usr_operator1' as User['id'], username: 'mreyes', displayName: 'María Reyes', role: 'operator', teamId: 'team_voice', active: true },
-  { id: 'usr_operator2' as User['id'], username: 'jlopez', displayName: 'Joaquín López', role: 'senior_operator', teamId: 'team_voice', active: true },
-  { id: 'usr_supervisor' as User['id'], username: 'nsuarez', displayName: 'Nora Suárez', role: 'supervisor', teamId: 'team_voice', active: true },
-  { id: 'usr_backoffice' as User['id'], username: 'pcastro', displayName: 'Pedro Castro', role: 'backoffice', teamId: 'team_back', active: true },
-  { id: 'usr_retention' as User['id'], username: 'lromero', displayName: 'Lucía Romero', role: 'retention_agent', teamId: 'team_ret', active: true },
-  { id: 'usr_collections' as User['id'], username: 'fgomez', displayName: 'Federico Gómez', role: 'collections_agent', teamId: 'team_col', active: true },
-  { id: 'usr_auditor' as User['id'], username: 'amendez', displayName: 'Andrea Méndez', role: 'auditor', teamId: 'team_audit', active: true },
-  { id: 'usr_admin' as User['id'], username: 'admin', displayName: 'Admin Root', role: 'admin', teamId: 'team_audit', active: true }
+  {
+    id: 'usr_operator1' as User['id'],
+    username: 'mreyes',
+    displayName: 'María Reyes',
+    role: 'operator',
+    teamId: 'team_voice',
+    active: true
+  },
+  {
+    id: 'usr_operator2' as User['id'],
+    username: 'jlopez',
+    displayName: 'Joaquín López',
+    role: 'senior_operator',
+    teamId: 'team_voice',
+    active: true
+  },
+  {
+    id: 'usr_supervisor' as User['id'],
+    username: 'nsuarez',
+    displayName: 'Nora Suárez',
+    role: 'supervisor',
+    teamId: 'team_voice',
+    active: true
+  },
+  {
+    id: 'usr_backoffice' as User['id'],
+    username: 'pcastro',
+    displayName: 'Pedro Castro',
+    role: 'backoffice',
+    teamId: 'team_back',
+    active: true
+  },
+  {
+    id: 'usr_retention' as User['id'],
+    username: 'lromero',
+    displayName: 'Lucía Romero',
+    role: 'retention_agent',
+    teamId: 'team_ret',
+    active: true
+  },
+  {
+    id: 'usr_collections' as User['id'],
+    username: 'fgomez',
+    displayName: 'Federico Gómez',
+    role: 'collections_agent',
+    teamId: 'team_col',
+    active: true
+  },
+  {
+    id: 'usr_auditor' as User['id'],
+    username: 'amendez',
+    displayName: 'Andrea Méndez',
+    role: 'auditor',
+    teamId: 'team_audit',
+    active: true
+  },
+  {
+    id: 'usr_admin' as User['id'],
+    username: 'admin',
+    displayName: 'Admin Root',
+    role: 'admin',
+    teamId: 'team_audit',
+    active: true
+  }
 ];
 
 const teams: Team[] = [
@@ -73,7 +129,12 @@ const teams: Team[] = [
 ];
 
 const queues: Queue[] = [
-  { id: 'q_voice_general', name: 'Voice - General', category: ['general_inquiry', 'complaint'], assignmentRule: 'round_robin' },
+  {
+    id: 'q_voice_general',
+    name: 'Voice - General',
+    category: ['general_inquiry', 'complaint'],
+    assignmentRule: 'round_robin'
+  },
   { id: 'q_billing', name: 'Billing Claims', category: ['billing_claim'], assignmentRule: 'least_load' },
   { id: 'q_technical', name: 'Technical Support', category: ['technical_complaint'], assignmentRule: 'skill_based' },
   { id: 'q_retention', name: 'Retention', category: ['cancellation_retention'], assignmentRule: 'skill_based' },
@@ -82,15 +143,42 @@ const queues: Queue[] = [
 
 // ---------- Products & contracts ----------
 const products: Product[] = [
-  { id: 'prod_mobile_postpaid', sku: 'MOB-POST-50', name: 'Mobile Postpaid 50GB', category: 'mobile', basePrice: 50, currency: 'USD' },
+  {
+    id: 'prod_mobile_postpaid',
+    sku: 'MOB-POST-50',
+    name: 'Mobile Postpaid 50GB',
+    category: 'mobile',
+    basePrice: 50,
+    currency: 'USD'
+  },
   { id: 'prod_fiber_500', sku: 'FIB-500', name: 'Fiber 500Mb', category: 'internet', basePrice: 65, currency: 'USD' },
   { id: 'prod_tv_basic', sku: 'TV-BAS', name: 'TV Basic 120ch', category: 'tv', basePrice: 35, currency: 'USD' },
-  { id: 'prod_bundle_triple', sku: 'BND-TRI', name: 'Triple Play Bundle', category: 'bundle', basePrice: 120, currency: 'USD' },
-  { id: 'prod_addon_roaming', sku: 'ADD-ROAM', name: 'Roaming Addon', category: 'addon', basePrice: 10, currency: 'USD' }
+  {
+    id: 'prod_bundle_triple',
+    sku: 'BND-TRI',
+    name: 'Triple Play Bundle',
+    category: 'bundle',
+    basePrice: 120,
+    currency: 'USD'
+  },
+  {
+    id: 'prod_addon_roaming',
+    sku: 'ADD-ROAM',
+    name: 'Roaming Addon',
+    category: 'addon',
+    basePrice: 10,
+    currency: 'USD'
+  }
 ];
 
 // ---------- Customers (residential + business + vip) ----------
-function makeResidential(i: number): { customer: Customer; account: Account; contactMethods: ContactMethod[]; contracts: Contract[]; services: Service[] } {
+function makeResidential(i: number): {
+  customer: Customer;
+  account: Account;
+  contactMethods: ContactMethod[];
+  contracts: Contract[];
+  services: Service[];
+} {
   const firstNames = ['Lucía', 'Mateo', 'Sofía', 'Tomás', 'Valentina', 'Bruno', 'Catalina', 'Joel', 'Renata', 'Iván'];
   const lastNames = ['Pérez', 'García', 'Fernández', 'López', 'Martínez', 'Sosa', 'Romero', 'Díaz', 'Acosta', 'Vega'];
   const fn = pick(firstNames);
@@ -152,8 +240,23 @@ function makeResidential(i: number): { customer: Customer; account: Account; con
   return { customer, account, contactMethods, contracts, services };
 }
 
-function makeBusiness(i: number): { customer: Customer; account: Account; contactMethods: ContactMethod[]; contracts: Contract[]; services: Service[] } {
-  const companyName = pick(['Acme SA', 'Globex LLC', 'Initech', 'Umbrella Co', 'Wayne Industries', 'Stark Holdings', 'Cyberdyne', 'Soylent BV']);
+function makeBusiness(i: number): {
+  customer: Customer;
+  account: Account;
+  contactMethods: ContactMethod[];
+  contracts: Contract[];
+  services: Service[];
+} {
+  const companyName = pick([
+    'Acme SA',
+    'Globex LLC',
+    'Initech',
+    'Umbrella Co',
+    'Wayne Industries',
+    'Stark Holdings',
+    'Cyberdyne',
+    'Soylent BV'
+  ]);
   const customerId = `cust_biz_${i}` as Customer['id'];
   const accountId = `acc_biz_${i}` as Account['id'];
   const createdAt = addDays(nowIso(), -int(300, 2500));
@@ -275,8 +378,18 @@ export function buildDataset(): LegacyOpsDataset {
       const issuedAt = addDays(nowIso(), -30 * m - 5);
       const dueAt = addDays(issuedAt, 15);
       const totalAmount = int(40, 300);
-      const status: Invoice['status'] = m === 0 ? 'issued' : pick(['paid', 'paid', 'paid', 'partial', 'overdue', 'disputed']);
-      const paidAmount = status === 'paid' ? totalAmount : status === 'partial' ? Math.floor(totalAmount / 2) : status === 'disputed' ? 0 : status === 'overdue' ? Math.floor(totalAmount * 0.3) : totalAmount;
+      const status: Invoice['status'] =
+        m === 0 ? 'issued' : pick(['paid', 'paid', 'paid', 'partial', 'overdue', 'disputed']);
+      const paidAmount =
+        status === 'paid'
+          ? totalAmount
+          : status === 'partial'
+            ? Math.floor(totalAmount / 2)
+            : status === 'disputed'
+              ? 0
+              : status === 'overdue'
+                ? Math.floor(totalAmount * 0.3)
+                : totalAmount;
       const invId = `inv_${acc.id}_${m}` as Invoice['id'];
       invoices.push({
         id: invId,
@@ -317,7 +430,14 @@ export function buildDataset(): LegacyOpsDataset {
   // ---------- Cases & interactions ----------
   const cases: Case[] = [];
   const interactions: Interaction[] = [];
-  const categories: Case['category'][] = ['billing_claim', 'technical_complaint', 'cancellation_retention', 'payment_promise', 'general_inquiry', 'complaint'];
+  const categories: Case['category'][] = [
+    'billing_claim',
+    'technical_complaint',
+    'cancellation_retention',
+    'payment_promise',
+    'general_inquiry',
+    'complaint'
+  ];
   const channels: Interaction['channel'][] = ['voice', 'email', 'chat', 'whatsapp'];
 
   for (let i = 1; i <= 40; i++) {
@@ -410,9 +530,29 @@ export function buildDataset(): LegacyOpsDataset {
   ];
 
   const offers: Offer[] = [
-    { id: 'off_1', name: 'Stay 20% off', description: '20% discount for 3 months', discountPercent: 20, appliesToSegment: ['residential', 'business'], validUntil: addDays(nowIso(), 60) },
-    { id: 'off_2', name: 'Free month', description: 'One month free on the current plan', fixedAmount: 50, appliesToSegment: ['residential'], validUntil: addDays(nowIso(), 30) },
-    { id: 'off_3', name: 'VIP upgrade', description: 'Upgrade to VIP tier with priority routing', appliesToSegment: ['residential', 'business'], validUntil: addDays(nowIso(), 90) }
+    {
+      id: 'off_1',
+      name: 'Stay 20% off',
+      description: '20% discount for 3 months',
+      discountPercent: 20,
+      appliesToSegment: ['residential', 'business'],
+      validUntil: addDays(nowIso(), 60)
+    },
+    {
+      id: 'off_2',
+      name: 'Free month',
+      description: 'One month free on the current plan',
+      fixedAmount: 50,
+      appliesToSegment: ['residential'],
+      validUntil: addDays(nowIso(), 30)
+    },
+    {
+      id: 'off_3',
+      name: 'VIP upgrade',
+      description: 'Upgrade to VIP tier with priority routing',
+      appliesToSegment: ['residential', 'business'],
+      validUntil: addDays(nowIso(), 90)
+    }
   ];
 
   // ---------- Fake Siebel dataset (mirror of part of the CRM data) ----------
@@ -438,8 +578,16 @@ export function buildDataset(): LegacyOpsDataset {
       id: (c.externalId ?? `ext_case_${i}`) as ExternalId,
       accountId: (accounts.find((a) => a.id === c.accountId)?.externalId ?? '') as ExternalId,
       contactId: (customers.find((cu) => cu.id === c.customerId)?.externalId ?? '') as ExternalId,
-      status: c.status === 'open' ? 'Open' : c.status === 'closed' ? 'Closed' : c.status === 'resolved' ? 'Closed' : 'In Progress',
-      priority: c.priority === 'urgent' || c.priority === 'high' ? '1-High' : c.priority === 'normal' ? '2-Medium' : '3-Low',
+      status:
+        c.status === 'open'
+          ? 'Open'
+          : c.status === 'closed'
+            ? 'Closed'
+            : c.status === 'resolved'
+              ? 'Closed'
+              : 'In Progress',
+      priority:
+        c.priority === 'urgent' || c.priority === 'high' ? '1-High' : c.priority === 'normal' ? '2-Medium' : '3-Low',
       category: c.category,
       subject: c.subject,
       description: c.description,
@@ -457,9 +605,10 @@ export function buildDataset(): LegacyOpsDataset {
     })),
     activities: interactions.slice(0, 10).map((it, i) => ({
       id: `ext_act_${i}` as ExternalId,
-      accountId: (accounts.find((a) => a.id === customers.find((c) => c.id === it.customerId)?.accountId)?.externalId ?? '') as ExternalId,
+      accountId: (accounts.find((a) => a.id === customers.find((c) => c.id === it.customerId)?.accountId)?.externalId ??
+        '') as ExternalId,
       contactId: (customers.find((c) => c.id === it.customerId)?.externalId ?? '') as ExternalId,
-      srId: it.caseId ? `ext_case_${i}` as ExternalId : undefined,
+      srId: it.caseId ? (`ext_case_${i}` as ExternalId) : undefined,
       type: it.channel === 'voice' ? 'Call' : it.channel === 'email' ? 'Email' : 'Task',
       status: 'Done',
       description: it.summary,
@@ -471,7 +620,8 @@ export function buildDataset(): LegacyOpsDataset {
       id: (o.externalId ?? `ext_so_${i}`) as ExternalId,
       accountId: (accounts.find((a) => a.id === o.accountId)?.externalId ?? '') as ExternalId,
       orderNumber: `ORD-${1000 + i}`,
-      type: o.type === 'install' ? 'New' : o.type === 'change' ? 'Change' : o.type === 'suspend' ? 'Suspend' : 'Disconnect',
+      type:
+        o.type === 'install' ? 'New' : o.type === 'change' ? 'Change' : o.type === 'suspend' ? 'Suspend' : 'Disconnect',
       status: o.status === 'completed' ? 'Completed' : o.status === 'cancelled' ? 'Cancelled' : 'In Progress',
       total: int(50, 500),
       currency: 'USD',
@@ -527,10 +677,27 @@ export function buildDemoMigrationArtifacts(): {
   entityMapping: EntityMapping;
 } {
   const registry = new SourceOfTruthRegistry();
-  registry.register({ module: 'customer.identity', rule: { kind: 'primary', system: 'siebel_like' }, since: '2026-01-01', notes: 'Identity still owned by legacy CRM' });
-  registry.register({ module: 'case.billing_claim', rule: { kind: 'fallback', primary: 'legacyops', secondary: 'siebel_like' }, since: '2026-02-01' });
-  registry.register({ module: 'billing.invoice', rule: { kind: 'primary', system: 'billing_provider' }, since: '2026-01-01' });
-  registry.register({ module: 'interaction.history', rule: { kind: 'merge', systems: ['legacyops', 'siebel_like'], mergeBy: 'occurredAt' }, since: '2026-03-01' });
+  registry.register({
+    module: 'customer.identity',
+    rule: { kind: 'primary', system: 'siebel_like' },
+    since: '2026-01-01',
+    notes: 'Identity still owned by legacy CRM'
+  });
+  registry.register({
+    module: 'case.billing_claim',
+    rule: { kind: 'fallback', primary: 'legacyops', secondary: 'siebel_like' },
+    since: '2026-02-01'
+  });
+  registry.register({
+    module: 'billing.invoice',
+    rule: { kind: 'primary', system: 'billing_provider' },
+    since: '2026-01-01'
+  });
+  registry.register({
+    module: 'interaction.history',
+    rule: { kind: 'merge', systems: ['legacyops', 'siebel_like'], mergeBy: 'occurredAt' },
+    since: '2026-03-01'
+  });
 
   const idStore = new IdMappingStore();
   const ds = buildDataset();
@@ -563,7 +730,8 @@ export function buildDemoMigrationArtifacts(): {
   const plan: MigrationPlan = {
     id: 'plan_case_mig_v1',
     name: 'Case Module Migration v1',
-    description: 'Migrate Service Request records from the Siebel-like legacy CRM into LegacyOps Case module with dual-write strategy.',
+    description:
+      'Migrate Service Request records from the Siebel-like legacy CRM into LegacyOps Case module with dual-write strategy.',
     sourceSystem: 'siebel_like',
     entityMappings: [entityMapping],
     strategy: 'dual_write',
@@ -572,17 +740,43 @@ export function buildDemoMigrationArtifacts(): {
   };
 
   const moduleStatuses: ModuleMigrationStatus[] = [
-    { module: 'customer.identity', status: 'shadow', ownerSystem: 'siebel_like', lastUpdated: '2026-02-01', notes: 'Read-only mirror.' },
+    {
+      module: 'customer.identity',
+      status: 'shadow',
+      ownerSystem: 'siebel_like',
+      lastUpdated: '2026-02-01',
+      notes: 'Read-only mirror.'
+    },
     { module: 'case.billing_claim', status: 'dual_write', ownerSystem: 'legacyops', lastUpdated: '2026-02-15' },
-    { module: 'billing.invoice', status: 'read_only_overlay', ownerSystem: 'billing_provider', lastUpdated: '2026-02-20' },
+    {
+      module: 'billing.invoice',
+      status: 'read_only_overlay',
+      ownerSystem: 'billing_provider',
+      lastUpdated: '2026-02-20'
+    },
     { module: 'interaction.history', status: 'cut_over', ownerSystem: 'legacyops', lastUpdated: '2026-03-01' }
   ] as ModuleMigrationStatus[];
 
   const sourceSystems: SourceSystem[] = [
     { id: 'legacyops', displayName: 'LegacyOps Console', kind: 'primary', description: 'The new CRM core.' },
-    { id: 'siebel_like', displayName: 'Siebel-like legacy CRM', kind: 'secondary', description: 'Conceptual legacy CRM used in the Fake Siebel Lab.' },
-    { id: 'billing_provider', displayName: 'External Billing Provider', kind: 'secondary', description: 'External system of truth for invoices.' },
-    { id: 'external_crm', displayName: 'External CRM (generic)', kind: 'archive', description: 'Archive of historical CRM data.' }
+    {
+      id: 'siebel_like',
+      displayName: 'Siebel-like legacy CRM',
+      kind: 'secondary',
+      description: 'Conceptual legacy CRM used in the Fake Siebel Lab.'
+    },
+    {
+      id: 'billing_provider',
+      displayName: 'External Billing Provider',
+      kind: 'secondary',
+      description: 'External system of truth for invoices.'
+    },
+    {
+      id: 'external_crm',
+      displayName: 'External CRM (generic)',
+      kind: 'archive',
+      description: 'Archive of historical CRM data.'
+    }
   ];
 
   return { sourceSystems, registry, idStore, plan, moduleStatuses, entityMapping };
@@ -604,7 +798,7 @@ export const ROI_DEMO = {
     screensPerInteraction: 4,
     clicksPerInteraction: 9,
     firstContactResolution: 0.78,
-    escalationRate: 0.10,
+    escalationRate: 0.1,
     trainingWeeks: 3,
     auditTimeMinutes: 90
   },
@@ -626,7 +820,8 @@ export function computeRoi() {
 
   const auditHoursBefore = before.auditTimeMinutes / 60;
   const auditHoursAfter = after.auditTimeMinutes / 60;
-  const auditSavingsPerSession = (auditHoursBefore - auditHoursAfter) * ROI_DEMO.auditTeamSize * ROI_DEMO.auditCostPerHourUsd;
+  const auditSavingsPerSession =
+    (auditHoursBefore - auditHoursAfter) * ROI_DEMO.auditTeamSize * ROI_DEMO.auditCostPerHourUsd;
 
   const fcrUplift = after.firstContactResolution - before.firstContactResolution;
   const escDrop = before.escalationRate - after.escalationRate;

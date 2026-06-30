@@ -1,5 +1,59 @@
 # Security Notes — LegacyOps Console
 
+> **Companion document**: `SECURITY.md` (root) is the canonical security
+> policy. This document provides the broader architectural and design-time
+> security notes that shaped the codebase.
+
+## 0. Current security posture (post-hardening cycle)
+
+| Area | Status |
+|---|---|
+| Secrets in repo | ✅ None (CI runs `grep -R` for `github_pat_`, `ghp_`, `GITHUB_TOKEN=`) |
+| `.env` ignored | ✅ |
+| Synthetic data only | ✅ |
+| RBAC enforcement in API | ✅ Simulated via `x-legacyops-role` header — **not auth** |
+| Permission-denied audit events | ✅ Recorded in the in-memory audit log |
+| CORS | ✅ Configurable via `CORS_ORIGIN` env var |
+| HTTPS / TLS termination | ❌ Expected from reverse proxy in production |
+| Rate limiting | ❌ Pending |
+| SSO / OIDC / SAML | ❌ Pending |
+| Secret management (Vault, KMS) | ❌ Pending |
+| Field-level encryption | ❌ Pending |
+| Audit log durability | ❌ In-memory only — pending append-only storage + SIEM export |
+| Threat model | ❌ Pending |
+| Penetration test | ❌ Pending |
+| Dependency vulnerability scanning | ⚠️ `pnpm audit` available, not wired into CI yet |
+| Compliance (GDPR, CCPA, SOC 2, ISO 27001) | ❌ Pending |
+
+### RBAC simulation detail
+
+The API enforces the permission matrix defined in
+`packages/permissions/src/index.ts` through a Fastify `preHandler` hook in
+`apps/api/src/rbac.ts`. The role is read from the `x-legacyops-role`
+header. If absent, the default role is `operator`.
+
+This is **simulated RBAC, not authentication**. Any HTTP client can set
+the header. Real identity integration (SSO/OIDC/SAML) is a tracked gap
+documented in `docs/ENTERPRISE_READINESS_GAP.md`.
+
+Denied requests return HTTP 403 with the LegacyOps error envelope:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Role operator cannot perform integration:configure"
+  }
+}
+```
+
+Every permission-denied event is appended to the audit log as a
+`permission.denied` event, with the role, permission, and resource path
+recorded as metadata.
+
+---
+
 ## 1. Purpose
 
 LegacyOps Console is intended to handle CRM workflows, customer records, cases, billing visibility, operational notes, permissions and audit trails.

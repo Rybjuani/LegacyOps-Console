@@ -8,13 +8,11 @@
 
 import type { Case, Customer } from '@legacyops/domain';
 import type { ExternalId } from '@legacyops/shared';
-import type {
-  SiebelAccount,
-  SiebelContact,
-  SiebelServiceRequest
-} from '../contracts/types.js';
+import type { SiebelAccount, SiebelContact, SiebelServiceRequest } from '../contracts/types.js';
 
-export function mapLegacyOpsCustomerToSiebelContact(c: Customer): Omit<SiebelContact, 'id' | 'accountId'> & { externalId?: string } {
+export function mapLegacyOpsCustomerToSiebelContact(
+  c: Customer
+): Omit<SiebelContact, 'id' | 'accountId'> & { externalId?: string } {
   const [firstName, ...rest] = c.displayName.split(' ');
   return {
     firstName: firstName ?? c.displayName,
@@ -26,7 +24,12 @@ export function mapLegacyOpsCustomerToSiebelContact(c: Customer): Omit<SiebelCon
   };
 }
 
-export function mapLegacyOpsAccountToSiebelAccount(a: { externalId?: string; status: string; currency: string; segment: string }): Omit<SiebelAccount, 'id' | 'name' | 'bu'> & { externalId?: string } {
+export function mapLegacyOpsAccountToSiebelAccount(a: {
+  externalId?: string;
+  status: string;
+  currency: string;
+  segment: string;
+}): Omit<SiebelAccount, 'id' | 'name' | 'bu'> & { externalId?: string } {
   const statusMap: Record<string, SiebelAccount['status']> = {
     active: 'Active',
     suspended: 'Suspended',
@@ -41,7 +44,9 @@ export function mapLegacyOpsAccountToSiebelAccount(a: { externalId?: string; sta
   };
 }
 
-export function mapLegacyOpsCaseToSiebelServiceRequest(c: Case): Omit<SiebelServiceRequest, 'id' | 'created' | 'updated' | 'srNumber'> & { externalId?: string } {
+export function mapLegacyOpsCaseToSiebelServiceRequest(
+  c: Case
+): Omit<SiebelServiceRequest, 'id' | 'created' | 'updated' | 'srNumber'> & { externalId?: string } {
   const priorityMap: Record<Case['priority'], SiebelServiceRequest['priority']> = {
     urgent: '1-High',
     high: '1-High',

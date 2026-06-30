@@ -62,7 +62,13 @@ export const AuditEvents = {
       metadata: { changes }
     }),
 
-  workflowStarted: (actorId: UserId, actorRole: string, runId: string, workflowId: string, customerId: string): AuditEvent =>
+  workflowStarted: (
+    actorId: UserId,
+    actorRole: string,
+    runId: string,
+    workflowId: string,
+    customerId: string
+  ): AuditEvent =>
     createAuditEvent({
       type: 'workflow.started',
       actorId,

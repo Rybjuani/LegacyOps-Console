@@ -8,8 +8,23 @@
 
 ## 1. Current status
 
-LegacyOps Console is a **synthetic scaffold**. It runs entirely on
-in-memory data and a Fake Siebel Lab. It is suitable for:
+LegacyOps Console is a **hardened synthetic scaffold**. It runs entirely
+on in-memory data and a Fake Siebel Lab. The hardening cycle added:
+
+- GitHub Actions CI (Node 22) running install, typecheck, lint, test,
+  build and Prettier format check on every push and pull request.
+- ESLint 9 flat config with typescript-eslint and eslint-plugin-react.
+- Prettier with `format:check` enforced in CI.
+- Simulated RBAC enforcement in the API (`x-legacyops-role` header)
+  applied to all sensitive endpoints. Not authentication — see below.
+- HTTP smoke tests covering 20 scenarios including RBAC denials.
+- `SECURITY.md` with secret handling, vulnerability reporting and data
+  policies.
+- Pull request template and GitHub issue templates.
+- Secret scanning grep in CI for `github_pat_`, `ghp_`, `GITHUB_TOKEN=`.
+- Vitest test count: 67 (47 unit + 20 HTTP smoke).
+
+It is suitable for:
 
 - demos
 - training
@@ -25,13 +40,15 @@ It is **not** suitable for production use with real customer data.
 
 ### 2.1 Security
 
-- ❌ No SSO / OIDC / SAML integration.
+- ✅ Simulated RBAC enforcement at the API route level
+  (`apps/api/src/rbac.ts`). Header `x-legacyops-role`, default `operator`.
+  Permission-denied events recorded in the audit log.
+- ❌ No real authentication (SSO / OIDC / SAML). The header is a demo
+  primitive.
 - ❌ No multi-factor authentication.
 - ❌ No secret management (secrets are inert placeholders in `.env`).
 - ❌ No field-level encryption.
 - ❌ No PII handling policy implementation.
-- ❌ No RBAC at the API layer (the `permissions` package exists but the
-  API does not enforce it yet).
 - ❌ No rate limiting.
 
 ### 2.2 Database
@@ -67,10 +84,14 @@ It is **not** suitable for production use with real customer data.
 
 - ✅ Unit tests exist for domain, permissions, workflows, audit,
   migration, siebel-bridge, observability, demo-data.
-- ❌ No integration tests against a real HTTP server.
+- ✅ HTTP smoke tests using Fastify `inject` (no real port) covering 20
+  scenarios including RBAC denials, customer 360, siebel bridge,
+  migration dry-run, ROI, audit.
+- ✅ 67 tests pass in CI on Node 22.
 - ❌ No load testing.
-- ❌ No chaos testing for adapter failures.
-- ❌ No end-to-end UI tests.
+- ❌ No chaos testing for adapter failures (the `FakeSiebelErrorSimulator`
+  exists but is not driven by chaos tests yet).
+- ❌ No end-to-end browser tests.
 
 ### 2.7 Compliance
 
@@ -104,8 +125,9 @@ It is **not** suitable for production use with real customer data.
 
 ## 3. Priority order for closing gaps
 
-1. **Security**: SSO, secret management, API RBAC enforcement, rate
-   limiting.
+1. **Security**: SSO, real auth, secret management, rate limiting.
+   (Simulated RBAC enforcement is already in place; it needs to be
+   backed by a real identity provider.)
 2. **Database**: pick a real DB (PostgreSQL recommended), add
    migrations, persistence.
 3. **Audit hardening**: append-only storage, SIEM export, retention.
@@ -114,7 +136,7 @@ It is **not** suitable for production use with real customer data.
 5. **Logging**: structured logs, correlation IDs, aggregation.
 6. **Deployment**: container image, Helm chart, deployment guide.
 7. **Compliance**: GDPR/CCPA, data residency.
-8. **Testing**: integration, load, chaos, e2e.
+8. **Testing**: load, chaos, e2e (HTTP smoke tests already in place).
 9. **Pilot hardening**: import template, rollback automation.
 10. **Legal review**: trademarks, copyrights, ecosystem audit notes.
 
@@ -132,16 +154,25 @@ shaped for production:
   proprietary schemas.
 - The **migration engine** has dry-run, conflict detection,
   reconciliation and rollback as first-class operations.
-- The **audit log** has the right event types; only the storage backend
-  is missing.
+- The **audit log** has the right event types and records
+  permission-denied events; only the durable storage backend is missing.
 - The **observability layer** has the right metric types; only real
   collectors are missing.
-- The **permissions model** is correct; only API enforcement is missing.
+- The **permissions model** is correct and is **enforced at the API
+  route level** via `preHandler` hooks. What is missing is real
+  authentication backing the role.
+- The **CI pipeline** runs install, typecheck, lint, test, build and
+  format:check on every push and pull request.
+- The **HTTP smoke tests** exercise 20 scenarios through Fastify
+  `inject`, including RBAC denials.
+- The **SECURITY.md** policy documents secret handling, vulnerability
+  reporting and data policies.
 
 ---
 
 ## 5. Reference
 
-- `docs/SECURITY_NOTES.md` — security posture.
+- `SECURITY.md` — canonical security policy.
+- `docs/SECURITY_NOTES.md` — security posture (companion to `SECURITY.md`).
 - `docs/PILOT_PLAYBOOK_SIEBEL.md` — pilot path.
 - `docs/PUBLIC_SIEBEL_RESEARCH_NOTES.md` — legal/ecosystem audit.

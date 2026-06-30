@@ -10,8 +10,10 @@
 6. **A Fake Siebel Lab** — a synthetic Siebel-like backend that reproduces latency, session expiry, permission errors and conflicts.
 7. **A pilot playbook and ROI metrics template** — a controlled path from demo to production.
 
-> **Status:** early scaffold. Synthetic data only. Not production-ready.
-> See `docs/ENTERPRISE_READINESS_GAP.md` for an honest gap analysis.
+> **Status:** hardened scaffold. Synthetic data only. Not production-ready.
+> CI, lint, typecheck, tests and build all pass on Node 22.
+> See `docs/ENTERPRISE_READINESS_GAP.md` for an honest gap analysis and
+> `SECURITY.md` for the security policy.
 
 ---
 
@@ -29,8 +31,12 @@ For the full positioning, see `docs/LEGACYOPS_VS_LEGACY_CRM.md` and `docs/SELLIN
 
 ```text
 legacyops-console/
+├── .github/
+│   ├── workflows/ci.yml          # CI: install, typecheck, lint, test, build, format
+│   ├── pull_request_template.md
+│   └── ISSUE_TEMPLATE/           # bug_report.md, feature_request.md
 ├── apps/
-│   ├── api/                      # Fastify API (TypeScript, ESM)
+│   ├── api/                      # Fastify API (TypeScript, ESM) + RBAC + smoke tests
 │   └── web/                      # React + Vite UI
 ├── packages/
 │   ├── domain/                   # CRM core domain
@@ -44,6 +50,9 @@ legacyops-console/
 │   ├── legacy-observability/     # Health, latency, errors for legacy/adapter layer
 │   └── demo-data/                # Synthetic dataset
 ├── docs/                         # Product, architecture, migration, ROI, pilot
+├── SECURITY.md                   # Security policy
+├── eslint.config.mjs             # ESLint 9 flat config
+├── .prettierrc                   # Prettier config
 ├── package.json
 ├── pnpm-workspace.yaml
 ├── tsconfig.base.json
@@ -56,11 +65,16 @@ legacyops-console/
 
 ## Stack
 
-- **Monorepo**: pnpm workspaces.
+- **Monorepo**: pnpm 9 workspaces.
 - **Language**: TypeScript (ESM, ES2022, strict).
+- **Node**: 22 LTS (chosen for native ESM, stable fetch API, long-term
+  support window).
 - **API**: Fastify 4.
 - **Web**: React 18 + Vite 5 + react-router 6.
-- **Tests**: Vitest 2.
+- **Tests**: Vitest 2 (unit + HTTP smoke tests via Fastify `inject`).
+- **Lint**: ESLint 9 flat config + typescript-eslint + eslint-plugin-react.
+- **Format**: Prettier 3.
+- **CI**: GitHub Actions (Node 22) — see `.github/workflows/ci.yml`.
 - **Data**: in-memory synthetic dataset. No real database in this phase.
 
 > **Decision: Fastify over NestJS.** Fastify is light and fast, and the route modules are organised by domain so a future migration to NestJS controllers would be a refactor, not a rewrite. See `docs/ARCHITECTURE.md`.
@@ -70,17 +84,120 @@ legacyops-console/
 ## Commands
 
 ```bash
-pnpm install
-pnpm dev          # start API + web in parallel
-pnpm dev:api      # API only (http://localhost:3001)
-pnpm dev:web      # web only (http://localhost:5173)
-pnpm build        # build all packages and apps
-pnpm test         # run all Vitest tests
-pnpm typecheck    # tsc --noEmit across all workspaces
-pnpm lint         # placeholder (see note below)
+pnpm install         # install all workspace dependencies
+pnpm dev             # start API + web in parallel (legacy & pnpm, see note)
+pnpm dev:api         # API only (http://localhost:3001)
+pnpm dev:web         # web only (http://localhost:5173)
+pnpm typecheck       # tsc --noEmit across all workspaces
+pnpm lint            # ESLint 9 flat config
+pnpm lint:fix        # ESLint with --fix
+pnpm format          # Prettier --write
+pnpm format:check    # Prettier --check (used in CI)
+pnpm test            # Vitest run (unit + HTTP smoke tests)
+pnpm test:watch      # Vitest watch mode
+pnpm build           # build all packages and both apps
+pnpm clean           # remove dist/node_modules across workspaces
 ```
 
-> **Lint note**: ESLint/Prettier are not enforced in this scaffold because the workspace has many cross-package type dependencies that would require additional configuration. The `lint` script is a no-op that documents this. Re-enabling lint is a tracked gap in `docs/ENTERPRISE_READINESS_GAP.md`.
+> **`pnpm dev` note**: the root `dev` script starts the API and the web
+> dev server with a shell `&`. For parity with the CI build, prefer
+> `pnpm dev:api` and `pnpm dev:web` in two terminals when iterating.
+
+---
+
+## Current Verified Status
+
+Last verified on the commit referenced in `git log` for the
+`hardening` cycle.
+
+| Capability | Status |
+|---|---|
+| Monorepo TypeScript pnpm | ✅ |
+| `apps/api` Fastify + RBAC simulation | ✅ |
+| `apps/web` React + Vite | ✅ |
+| 10 packages (domain, shared, audit, permissions, workflows, adapters, siebel-bridge, migration, legacy-observability, demo-data) | ✅ |
+| `pnpm install --frozen-lockfile` | ✅ reproducible |
+| `pnpm typecheck` | ✅ passes |
+| `pnpm lint` (ESLint 9 flat config, no errors) | ✅ passes |
+| `pnpm format:check` (Prettier) | ✅ passes |
+| `pnpm test` (unit + HTTP smoke tests) | ✅ 67 tests pass |
+| `pnpm build` (packages + api + web) | ✅ passes |
+| GitHub Actions CI (Node 22) | ✅ workflow created |
+| RBAC enforcement in API (header-based) | ✅ simulated, not auth |
+| SECURITY.md | ✅ |
+| Synthetic data only | ✅ |
+| No secrets in repo (verified by grep) | ✅ |
+| Real database | ❌ pending |
+| Real SSO/OIDC/SAML | ❌ pending |
+| Real Siebel REST adapter | ❌ pending |
+| Production deployment | ❌ pending |
+
+---
+
+## API RBAC Simulation
+
+The API enforces the permission matrix defined in
+`packages/permissions/src/index.ts`. The role is read from the
+`x-legacyops-role` HTTP header. If absent, the default role is
+`operator`.
+
+```bash
+# operator (default) — can read customers, cases, billing
+curl http://localhost:3001/customers
+
+# admin — can read migration, siebel bridge, audit, everything
+curl -H 'x-legacyops-role: admin' http://localhost:3001/migration/source-of-truth
+
+# auditor — can read audit-events but NOT run migration
+curl -H 'x-legacyops-role: auditor' http://localhost:3001/audit-events
+curl -H 'x-legacyops-role: auditor' -X POST http://localhost:3001/migration/dry-run  # → 403
+```
+
+Available roles: `operator`, `senior_operator`, `supervisor`,
+`backoffice`, `retention_agent`, `collections_agent`, `auditor`,
+`admin`.
+
+Denied requests return:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Role operator cannot perform integration:configure"
+  }
+}
+```
+
+Permission-denied events are recorded in the in-memory audit log.
+
+> **This is NOT authentication.** Any HTTP client can set the
+> `x-legacyops-role` header. Real SSO/OIDC/SAML integration is a tracked
+> gap. See `SECURITY.md` and `docs/SECURITY_NOTES.md`.
+
+---
+
+## Not Production Ready
+
+This scaffold is honest about its limits. The following are **NOT** ready
+for production:
+
+- **No real authentication.** The `x-legacyops-role` header is a demo
+  primitive, not auth.
+- **No real database.** All data is in-memory and resets on restart.
+- **No real Siebel adapter.** Only the Fake Siebel Lab is shipped.
+- **No audit log durability.** The audit log is in-memory.
+- **No rate limiting, no WAF, no TLS termination.** These are expected
+  from a reverse proxy in a real deployment.
+- **No SSO/OIDC/SAML.**
+- **No secret management.** `.env` is for local dev only.
+- **No compliance artifacts.** GDPR, CCPA, SOC 2, ISO 27001 are all
+  pending.
+- **No load testing, chaos testing, or e2e browser testing.**
+- **No container image or Helm chart.**
+
+See `docs/ENTERPRISE_READINESS_GAP.md` for the full gap analysis and
+prioritised closing plan.
 
 ---
 
@@ -159,11 +276,12 @@ See `docs/MIGRATION_STRATEGY.md` and `docs/INTEGRATION_MODES.md`.
 
 | Document | Purpose |
 |---|---|
+| `SECURITY.md` | Security policy, secret handling, vulnerability reporting. |
 | `docs/PRODUCT_VISION.md` | Long-term product vision. |
 | `docs/ARCHITECTURE.md` | Architecture overview. |
 | `docs/MIGRATION_STRATEGY.md` | Migration strategy. |
 | `docs/DEMO_SCENARIOS.md` | Demo scenarios. |
-| `docs/SECURITY_NOTES.md` | Security posture. |
+| `docs/SECURITY_NOTES.md` | Security posture (companion to `SECURITY.md`). |
 | `docs/PUBLIC_SIEBEL_RESEARCH_NOTES.md` | Public Siebel ecosystem audit. |
 | `docs/SIEBEL_COMPATIBILITY_STRATEGY.md` | How LegacyOps integrates with Siebel-like environments. |
 | `docs/SIEBEL_OBJECT_MAPPING.md` | Conceptual object mapping table. |
@@ -184,14 +302,17 @@ See `docs/MIGRATION_STRATEGY.md` and `docs/INTEGRATION_MODES.md`.
 
 ## Current status
 
-- ✅ Monorepo with pnpm workspaces.
+- ✅ Monorepo with pnpm 9 workspaces, TypeScript strict, ESM.
 - ✅ 10 packages: domain, shared, audit, permissions, workflows, adapters, siebel-bridge, migration, legacy-observability, demo-data.
-- ✅ Fastify API with all required endpoints.
+- ✅ Fastify API with all required endpoints + simulated RBAC enforcement.
 - ✅ React + Vite UI with 12 panels.
-- ✅ Vitest tests across all packages.
-- ✅ Strategic documentation set.
+- ✅ 67 Vitest tests (47 unit + 20 HTTP smoke tests via Fastify `inject`).
+- ✅ ESLint 9 flat config + Prettier — both clean.
+- ✅ GitHub Actions CI (Node 22) — typecheck, lint, test, build, format.
+- ✅ SECURITY.md, PR template, issue templates.
+- ✅ Strategic documentation set (18 docs).
 - ⚠️ Synthetic data only.
-- ⚠️ No real database, no real Siebel adapter, no SSO, no production hardening.
+- ⚠️ No real database, no real Siebel adapter, no SSO/OIDC/SAML, no production hardening.
 - ❌ Not production-ready. See `docs/ENTERPRISE_READINESS_GAP.md`.
 
 ---

@@ -6,11 +6,7 @@
  * names are intentionally generic; no proprietary schema is reproduced.
  */
 
-import type {
-  SiebelBusinessObject,
-  SiebelBusinessService,
-  SiebelIntegrationObject
-} from '../contracts/types.js';
+import type { SiebelBusinessObject, SiebelBusinessService, SiebelIntegrationObject } from '../contracts/types.js';
 
 const BUSINESS_OBJECTS: SiebelBusinessObject[] = [
   { name: 'Account', components: ['Account', 'Account Address', 'Business Address'] },
@@ -23,9 +19,21 @@ const BUSINESS_OBJECTS: SiebelBusinessObject[] = [
 
 const INTEGRATION_OBJECTS: SiebelIntegrationObject[] = [
   { name: 'Account Interface', namespace: 'LegacyOps.SiebelLike', fields: ['Id', 'Name', 'Status', 'Currency', 'BU'] },
-  { name: 'Contact Interface', namespace: 'LegacyOps.SiebelLike', fields: ['Id', 'AccountId', 'FirstName', 'LastName', 'Email', 'Phone'] },
-  { name: 'Service Request Interface', namespace: 'LegacyOps.SiebelLike', fields: ['Id', 'AccountId', 'ContactId', 'Status', 'Priority', 'Subject', 'Description'] },
-  { name: 'Invoice Interface', namespace: 'LegacyOps.SiebelLike', fields: ['Id', 'AccountId', 'Period', 'TotalAmount', 'Status'] }
+  {
+    name: 'Contact Interface',
+    namespace: 'LegacyOps.SiebelLike',
+    fields: ['Id', 'AccountId', 'FirstName', 'LastName', 'Email', 'Phone']
+  },
+  {
+    name: 'Service Request Interface',
+    namespace: 'LegacyOps.SiebelLike',
+    fields: ['Id', 'AccountId', 'ContactId', 'Status', 'Priority', 'Subject', 'Description']
+  },
+  {
+    name: 'Invoice Interface',
+    namespace: 'LegacyOps.SiebelLike',
+    fields: ['Id', 'AccountId', 'Period', 'TotalAmount', 'Status']
+  }
 ];
 
 const BUSINESS_SERVICES: SiebelBusinessService[] = [

@@ -21,26 +21,23 @@ import { id, nowIso } from '@legacyops/shared';
 export type { WorkflowDefinition, WorkflowRun, WorkflowRunStep, WorkflowStepDefinition };
 
 export class WorkflowValidationError extends Error {
-  constructor(message: string, public readonly details?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    public readonly details?: Record<string, unknown>
+  ) {
     super(message);
     this.name = 'WorkflowValidationError';
   }
 }
 
-export function validateStepFields(
-  step: WorkflowStepDefinition,
-  capturedFields: Record<string, unknown>
-): void {
+export function validateStepFields(step: WorkflowStepDefinition, capturedFields: Record<string, unknown>): void {
   const missing: string[] = [];
   for (const field of step.requiredFields) {
     const v = capturedFields[field];
     if (v === undefined || v === null || v === '') missing.push(field);
   }
   if (missing.length > 0) {
-    throw new WorkflowValidationError(
-      `Missing required fields for step "${step.label}"`,
-      { stepId: step.id, missing }
-    );
+    throw new WorkflowValidationError(`Missing required fields for step "${step.label}"`, { stepId: step.id, missing });
   }
 }
 

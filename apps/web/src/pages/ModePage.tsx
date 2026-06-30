@@ -3,8 +3,8 @@ export function ModePage() {
     <div>
       <h1 className="page-title">Integration Modes</h1>
       <p className="page-subtitle">
-        LegacyOps can run in seven integration modes — from pure standalone CRM to full progressive replacement.
-        See <code>docs/INTEGRATION_MODES.md</code>.
+        LegacyOps can run in seven integration modes — from pure standalone CRM to full progressive replacement. See{' '}
+        <code>docs/INTEGRATION_MODES.md</code>.
       </p>
 
       <div className="grid grid-2">
@@ -22,11 +22,17 @@ export function ModePage() {
         </div>
         <div className="panel">
           <h3>4. Workflow wrapper</h3>
-          <p>LegacyOps guides the operator through a workflow, while the legacy system remains the source of truth. Audit and SLA are owned by LegacyOps.</p>
+          <p>
+            LegacyOps guides the operator through a workflow, while the legacy system remains the source of truth. Audit
+            and SLA are owned by LegacyOps.
+          </p>
         </div>
         <div className="panel">
           <h3>5. Controlled write-back</h3>
-          <p>LegacyOps writes back to the legacy system through the bridge. Conflicts are detected and surfaced before write.</p>
+          <p>
+            LegacyOps writes back to the legacy system through the bridge. Conflicts are detected and surfaced before
+            write.
+          </p>
         </div>
         <div className="panel">
           <h3>6. Hybrid source-of-truth</h3>
@@ -34,7 +40,9 @@ export function ModePage() {
         </div>
         <div className="panel">
           <h3>7. Progressive replacement</h3>
-          <p>Module by module, LegacyOps becomes the primary system. Legacy is retired per module after reconciliation.</p>
+          <p>
+            Module by module, LegacyOps becomes the primary system. Legacy is retired per module after reconciliation.
+          </p>
         </div>
       </div>
     </div>

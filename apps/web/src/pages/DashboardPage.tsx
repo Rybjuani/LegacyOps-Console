@@ -36,17 +36,34 @@ export function DashboardPage() {
       <p className="page-subtitle">High-level snapshot of the LegacyOps CRM core and the Siebel-like bridge.</p>
 
       <div className="grid grid-4 mb">
-        <div className="panel kpi"><span className="label">Customers</span><span className="value">{data.customers.total}</span></div>
-        <div className="panel kpi"><span className="label">Open cases</span><span className="value">{data.cases.items.length}</span></div>
-        <div className="panel kpi"><span className="label">Workflows</span><span className="value">{data.workflows.items.length}</span></div>
-        <div className="panel kpi"><span className="label">Audit events</span><span className="value">{data.audit.total}</span></div>
+        <div className="panel kpi">
+          <span className="label">Customers</span>
+          <span className="value">{data.customers.total}</span>
+        </div>
+        <div className="panel kpi">
+          <span className="label">Open cases</span>
+          <span className="value">{data.cases.items.length}</span>
+        </div>
+        <div className="panel kpi">
+          <span className="label">Workflows</span>
+          <span className="value">{data.workflows.items.length}</span>
+        </div>
+        <div className="panel kpi">
+          <span className="label">Audit events</span>
+          <span className="value">{data.audit.total}</span>
+        </div>
       </div>
 
       <div className="grid grid-2">
         <div className="panel">
           <h3>Bridge health</h3>
-          <p className="muted">Status: <span className="pill ok">{data.health.status}</span></p>
-          <p className="muted">The Siebel-like bridge is running in synthetic mode. All endpoints serve fictional data from the in-memory Fake Siebel Lab.</p>
+          <p className="muted">
+            Status: <span className="pill ok">{data.health.status}</span>
+          </p>
+          <p className="muted">
+            The Siebel-like bridge is running in synthetic mode. All endpoints serve fictional data from the in-memory
+            Fake Siebel Lab.
+          </p>
         </div>
         <div className="panel">
           <h3>What makes LegacyOps different</h3>

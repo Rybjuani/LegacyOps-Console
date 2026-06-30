@@ -1,9 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import type { AppState } from '../state.js';
 import { paginate } from '@legacyops/shared';
+import { withPermission } from '../rbac.js';
 
 export async function registerAuditRoutes(app: FastifyInstance, state: AppState) {
-  app.get('/audit-events', async (req) => {
+  app.get('/audit-events', { preHandler: withPermission('audit:read') }, async (req) => {
     const q = req.query as { type?: string; actorId?: string; page?: string; pageSize?: string };
     let items = state.auditLog.list();
     if (q.type) items = items.filter((e) => e.type === q.type);

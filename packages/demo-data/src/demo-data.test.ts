@@ -14,7 +14,8 @@ describe('roi calculation sanity', () => {
 
   it('roi is internally consistent', () => {
     const r = computeRoi();
-    const expectedHours = (ROI_DEMO.before.avgHandleTimeSec - ROI_DEMO.after.avgHandleTimeSec) * 60 * ROI_DEMO.teamSize / 3600;
+    const expectedHours =
+      ((ROI_DEMO.before.avgHandleTimeSec - ROI_DEMO.after.avgHandleTimeSec) * 60 * ROI_DEMO.teamSize) / 3600;
     expect(Math.round(r.hoursSavedPerDay)).toBe(Math.round(expectedHours));
   });
 });

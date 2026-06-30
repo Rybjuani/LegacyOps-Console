@@ -6,8 +6,6 @@
  * NOT contact any real Siebel server.
  */
 
-import { addDays, nowIso } from '@legacyops/shared';
-
 export interface FakeSiebelSession {
   token: string;
   userId: string;

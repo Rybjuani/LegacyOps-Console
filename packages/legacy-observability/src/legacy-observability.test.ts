@@ -15,7 +15,13 @@ describe('legacy metrics collector', () => {
 
   it('records errors', () => {
     const c = new LegacyMetricsCollector();
-    c.recordError({ adapter: 'siebel-bridge', operation: 'invoke', code: 'SBL-EAI-001', message: 'timeout', retriable: true });
+    c.recordError({
+      adapter: 'siebel-bridge',
+      operation: 'invoke',
+      code: 'SBL-EAI-001',
+      message: 'timeout',
+      retriable: true
+    });
     expect(c.errorsList().length).toBe(1);
   });
 

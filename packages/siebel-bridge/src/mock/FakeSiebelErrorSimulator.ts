@@ -10,8 +10,8 @@ import type { AdapterCallContext } from '@legacyops/adapters';
 import type { SiebelErrorShape, SiebelErrorCode } from '../contracts/types.js';
 
 export interface ErrorSimulationConfig {
-  timeoutRate: number;       // 0..1
-  authFailureRate: number;   // 0..1
+  timeoutRate: number; // 0..1
+  authFailureRate: number; // 0..1
   permissionDeniedRate: number;
   conflictRate: number;
   partialDataRate: number;

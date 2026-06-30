@@ -29,8 +29,8 @@ export type SourceOfTruthRule =
   | { kind: 'merge'; systems: SourceSystemId[]; mergeBy: string };
 
 export interface SourceOfTruthEntry {
-  module: string;          // e.g. "customer.identity", "case.billing_claim"
-  field?: string;          // optional field-level rule
+  module: string; // e.g. "customer.identity", "case.billing_claim"
+  field?: string; // optional field-level rule
   rule: SourceOfTruthRule;
   since: string;
   notes?: string;
@@ -65,15 +65,21 @@ export interface FieldMapping {
 export interface EntityMapping {
   id: string;
   sourceSystem: SourceSystemId;
-  sourceEntity: string;        // e.g. "Service Request"
-  targetEntity: string;        // e.g. "Case"
+  sourceEntity: string; // e.g. "Service Request"
+  targetEntity: string; // e.g. "Case"
   fields: FieldMapping[];
   defaultCategory?: string;
 }
 
 export class IdMappingStore {
-  private byExternal = new Map<string, { internalId: string; externalId: ExternalId; system: SourceSystemId; entity: string }>();
-  private byInternal = new Map<string, { internalId: string; externalId: ExternalId; system: SourceSystemId; entity: string }>();
+  private byExternal = new Map<
+    string,
+    { internalId: string; externalId: ExternalId; system: SourceSystemId; entity: string }
+  >();
+  private byInternal = new Map<
+    string,
+    { internalId: string; externalId: ExternalId; system: SourceSystemId; entity: string }
+  >();
 
   register(internalId: string, externalId: ExternalId, system: SourceSystemId, entity: string): void {
     const key = `${system}:${entity}:${externalId}`;
@@ -86,7 +92,10 @@ export class IdMappingStore {
     return this.byExternal.get(`${system}:${entity}:${externalId}`)?.internalId;
   }
 
-  mapInternalIdToExternalId(internalId: string, entity: string): { externalId: ExternalId; system: SourceSystemId } | undefined {
+  mapInternalIdToExternalId(
+    internalId: string,
+    entity: string
+  ): { externalId: ExternalId; system: SourceSystemId } | undefined {
     const rec = this.byInternal.get(`${entity}:${internalId}`);
     return rec ? { externalId: rec.externalId, system: rec.system } : undefined;
   }
@@ -201,7 +210,7 @@ export function createDryRunReport(input: DryRunInput): MigrationDryRunResult {
   let mapped = 0;
 
   for (const rec of input.sourceRecords) {
-    let missing: string[] = [];
+    const missing: string[] = [];
     for (const mapping of input.plan.entityMappings) {
       for (const f of mapping.fields) {
         if (!(f.sourceField in rec)) {
@@ -224,7 +233,11 @@ export function createDryRunReport(input: DryRunInput): MigrationDryRunResult {
 
     const externalId = String(rec['Id'] ?? rec['id'] ?? '');
     if (externalId) {
-      const existing = input.idStore.mapExternalIdToInternalId(externalId as ExternalId, input.plan.sourceSystem, input.plan.entityMappings[0]?.targetEntity ?? 'Case');
+      const existing = input.idStore.mapExternalIdToInternalId(
+        externalId as ExternalId,
+        input.plan.sourceSystem,
+        input.plan.entityMappings[0]?.targetEntity ?? 'Case'
+      );
       if (existing) {
         conflicts.push({
           kind: 'duplicate_external_id',
@@ -286,7 +299,12 @@ export function detectConflicts(records: Record<string, unknown>[], mapping: Ent
   return conflicts;
 }
 
-export function mapExternalIdToInternalId(store: IdMappingStore, externalId: ExternalId, system: SourceSystemId, entity: string): string | undefined {
+export function mapExternalIdToInternalId(
+  store: IdMappingStore,
+  externalId: ExternalId,
+  system: SourceSystemId,
+  entity: string
+): string | undefined {
   return store.mapExternalIdToInternalId(externalId, system, entity);
 }
 

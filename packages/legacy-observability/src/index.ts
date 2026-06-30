@@ -197,10 +197,21 @@ export class MockSiebelMetricsCollector {
 
   snapshot(collector: LegacyMetricsCollector): LegacyMetric[] {
     return [
-      { name: 'siebel_sessions_active', type: 'gauge', value: this.cfg.sessionCount, unit: 'sessions', observedAt: nowIso() },
+      {
+        name: 'siebel_sessions_active',
+        type: 'gauge',
+        value: this.cfg.sessionCount,
+        unit: 'sessions',
+        observedAt: nowIso()
+      },
       { name: 'siebel_queue_depth', type: 'gauge', value: this.cfg.queueDepth, unit: 'items', observedAt: nowIso() },
       { name: 'siebel_availability', type: 'gauge', value: this.cfg.availability, unit: 'ratio', observedAt: nowIso() },
-      { name: 'siebel_failed_calls_total', type: 'counter', value: collector.errorsList(1000).length, observedAt: nowIso() }
+      {
+        name: 'siebel_failed_calls_total',
+        type: 'counter',
+        value: collector.errorsList(1000).length,
+        observedAt: nowIso()
+      }
     ];
   }
 }

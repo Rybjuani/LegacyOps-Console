@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { completeWorkflowStep, findDemoWorkflow, startWorkflow, WorkflowValidationError, listDemoWorkflows } from '@legacyops/workflows';
+import {
+  completeWorkflowStep,
+  findDemoWorkflow,
+  startWorkflow,
+  WorkflowValidationError,
+  listDemoWorkflows
+} from '@legacyops/workflows';
 
 describe('workflow validation', () => {
   it('starts and completes a workflow run', () => {
@@ -19,7 +25,9 @@ describe('workflow validation', () => {
   it('fails when required fields are missing', () => {
     const wf = findDemoWorkflow('wf_billing_claim')!;
     const run = startWorkflow({ workflow: wf, customerId: 'cust_test' as never, agentId: 'usr_operator1' as never });
-    expect(() => completeWorkflowStep(run, wf, wf.steps[0].id, { invoiceId: 'inv_1' })).toThrow(WorkflowValidationError);
+    expect(() => completeWorkflowStep(run, wf, wf.steps[0].id, { invoiceId: 'inv_1' })).toThrow(
+      WorkflowValidationError
+    );
   });
 
   it('completes all steps to mark the run completed', () => {

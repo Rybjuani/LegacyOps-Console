@@ -54,10 +54,7 @@ describe('migration mapping', () => {
       targetEntity: 'Case',
       fields: [{ sourceSystem: 'siebel_like', sourceField: 'Id', targetField: 'externalId' }]
     };
-    const conflicts = detectConflicts(
-      [{ Id: 'a' }, { Id: 'a' }, {}],
-      m
-    );
+    const conflicts = detectConflicts([{ Id: 'a' }, { Id: 'a' }, {}], m);
     expect(conflicts.length).toBeGreaterThan(0);
     expect(conflicts.some((c) => c.kind === 'duplicate_external_id')).toBe(true);
   });
@@ -65,13 +62,19 @@ describe('migration mapping', () => {
   it('runs a dry-run and returns a structured report', () => {
     const store = new IdMappingStore();
     const plan = {
-      id: 'plan_1', name: 'Plan', description: 'desc',
+      id: 'plan_1',
+      name: 'Plan',
+      description: 'desc',
       sourceSystem: 'siebel_like' as const,
-      entityMappings: [{
-        id: 'em', sourceSystem: 'siebel_like' as const,
-        sourceEntity: 'SR', targetEntity: 'Case',
-        fields: [{ sourceSystem: 'siebel_like' as const, sourceField: 'Id', targetField: 'externalId' }]
-      }],
+      entityMappings: [
+        {
+          id: 'em',
+          sourceSystem: 'siebel_like' as const,
+          sourceEntity: 'SR',
+          targetEntity: 'Case',
+          fields: [{ sourceSystem: 'siebel_like' as const, sourceField: 'Id', targetField: 'externalId' }]
+        }
+      ],
       strategy: 'dual_write' as const,
       rollbackEnabled: true,
       createdAt: '2026-01-01T00:00:00.000Z'
@@ -102,7 +105,12 @@ describe('migration mapping', () => {
 
   it('source-of-truth registry resolves per module and field', () => {
     const r = new SourceOfTruthRegistry();
-    r.register({ module: 'customer', field: 'email', rule: { kind: 'primary', system: 'legacyops' }, since: '2026-01-01' });
+    r.register({
+      module: 'customer',
+      field: 'email',
+      rule: { kind: 'primary', system: 'legacyops' },
+      since: '2026-01-01'
+    });
     r.register({ module: 'customer', rule: { kind: 'primary', system: 'siebel_like' }, since: '2026-01-01' });
     expect(r.resolve('customer', 'email')?.rule.kind).toBe('primary');
     expect(r.resolve('customer', 'email')?.rule).toMatchObject({ system: 'legacyops' });

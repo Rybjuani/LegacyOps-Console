@@ -1,6 +1,6 @@
 {
   "name": "legacyops-console",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "LegacyOps Console — Enterprise CRM with Siebel-like bridge, anti-corruption layer, migration engine and legacy observability.",
   "license": "MIT",
@@ -13,13 +13,22 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "pnpm -r typecheck",
-    "lint": "echo 'Lint is intentionally not enforced in this scaffold. See README -> Limitations.' && exit 0",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,css,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,css,md,yml,yaml}\"",
     "clean": "pnpm -r exec rm -rf dist node_modules .turbo"
   },
   "devDependencies": {
+    "@eslint/js": "^9.12.0",
+    "@types/node": "^22.7.4",
+    "eslint": "^9.12.0",
+    "eslint-plugin-react": "^7.37.1",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "prettier": "^3.3.3",
     "typescript": "^5.6.2",
-    "vitest": "^2.1.1",
-    "@types/node": "^22.7.4"
+    "typescript-eslint": "^8.8.0",
+    "vitest": "^2.1.1"
   },
   "engines": {
     "node": ">=20.10.0"

@@ -34,7 +34,17 @@ export interface FakeSiebelDataset {
   assets: SiebelAsset[];
   activities: SiebelActivity[];
   orders: SiebelOrder[];
-  invoices: { id: string; accountId: string; period: string; totalAmount: number; paidAmount: number; currency: string; status: string; issuedAt: string; dueAt: string }[];
+  invoices: {
+    id: string;
+    accountId: string;
+    period: string;
+    totalAmount: number;
+    paidAmount: number;
+    currency: string;
+    status: string;
+    issuedAt: string;
+    dueAt: string;
+  }[];
 }
 
 export class FakeSiebelAdapter implements SiebelBridge {
@@ -62,7 +72,10 @@ export class FakeSiebelAdapter implements SiebelBridge {
   }
 
   // ----- customer / contact -----
-  async searchContacts(query: { q?: string; documentNumber?: string; email?: string; phone?: string }, ctx?: AdapterCallContext): Promise<SiebelContact[]> {
+  async searchContacts(
+    query: { q?: string; documentNumber?: string; email?: string; phone?: string },
+    ctx?: AdapterCallContext
+  ): Promise<SiebelContact[]> {
     await this.simulate(ctx);
     const q = (query.q ?? '').toLowerCase();
     return this.data.contacts.filter((c) => {
@@ -113,7 +126,10 @@ export class FakeSiebelAdapter implements SiebelBridge {
   }
 
   // ----- service requests -----
-  async listServiceRequests(query: { accountId?: string; status?: string }, ctx?: AdapterCallContext): Promise<SiebelServiceRequest[]> {
+  async listServiceRequests(
+    query: { accountId?: string; status?: string },
+    ctx?: AdapterCallContext
+  ): Promise<SiebelServiceRequest[]> {
     await this.simulate(ctx);
     return this.data.serviceRequests.filter((s) => {
       if (query.accountId && s.accountId !== query.accountId) return false;
@@ -127,14 +143,17 @@ export class FakeSiebelAdapter implements SiebelBridge {
     return this.data.serviceRequests.find((s) => s.id === id);
   }
 
-  async createServiceRequest(input: {
-    accountId: string;
-    contactId: string;
-    subject: string;
-    description: string;
-    category: string;
-    priority: string;
-  }, ctx?: AdapterCallContext): Promise<SiebelServiceRequest> {
+  async createServiceRequest(
+    input: {
+      accountId: string;
+      contactId: string;
+      subject: string;
+      description: string;
+      category: string;
+      priority: string;
+    },
+    ctx?: AdapterCallContext
+  ): Promise<SiebelServiceRequest> {
     await this.simulate(ctx);
     const sr: SiebelServiceRequest = {
       id: `ext_sr_${Math.random().toString(36).slice(2, 10)}` as ExternalId,
@@ -158,7 +177,9 @@ export class FakeSiebelAdapter implements SiebelBridge {
     await this.simulate(ctx);
     const invoices = this.data.invoices.filter((i) => i.accountId === accountId);
     const totalDue = invoices.reduce((s, i) => s + (i.totalAmount - i.paidAmount), 0);
-    const overdue = invoices.filter((i) => i.status === 'Overdue').reduce((s, i) => s + (i.totalAmount - i.paidAmount), 0);
+    const overdue = invoices
+      .filter((i) => i.status === 'Overdue')
+      .reduce((s, i) => s + (i.totalAmount - i.paidAmount), 0);
     const nextDue = invoices.find((i) => i.status === 'Issued' || i.status === 'Overdue');
     return {
       accountId,
@@ -171,17 +192,19 @@ export class FakeSiebelAdapter implements SiebelBridge {
 
   async listInvoices(accountId: string, ctx?: AdapterCallContext) {
     await this.simulate(ctx);
-    return this.data.invoices.filter((i) => i.accountId === accountId).map((i) => ({
-      id: i.id,
-      accountId: i.accountId,
-      period: i.period,
-      totalAmount: i.totalAmount,
-      paidAmount: i.paidAmount,
-      currency: i.currency,
-      status: i.status,
-      issuedAt: i.issuedAt,
-      dueAt: i.dueAt
-    }));
+    return this.data.invoices
+      .filter((i) => i.accountId === accountId)
+      .map((i) => ({
+        id: i.id,
+        accountId: i.accountId,
+        period: i.period,
+        totalAmount: i.totalAmount,
+        paidAmount: i.paidAmount,
+        currency: i.currency,
+        status: i.status,
+        issuedAt: i.issuedAt,
+        dueAt: i.dueAt
+      }));
   }
 
   listInvoicesForAccount(accountId: string, ctx?: AdapterCallContext) {
@@ -189,12 +212,18 @@ export class FakeSiebelAdapter implements SiebelBridge {
   }
 
   // ----- business services -----
-  async invoke(name: string, method: string, args: Record<string, unknown>, ctx?: AdapterCallContext): Promise<{ result: unknown; durationMs: number }> {
+  async invoke(
+    name: string,
+    method: string,
+    args: Record<string, unknown>,
+    ctx?: AdapterCallContext
+  ): Promise<{ result: unknown; durationMs: number }> {
     const t0 = Date.now();
     await this.simulate(ctx);
     const bs = this.meta.findBusinessService(name);
     if (!bs) throw new AdapterError(`Business service "${name}" not found`, 'not_found', 404);
-    if (!bs.methods.includes(method)) throw new AdapterError(`Method "${method}" not found on BS "${name}"`, 'not_found', 404);
+    if (!bs.methods.includes(method))
+      throw new AdapterError(`Method "${method}" not found on BS "${name}"`, 'not_found', 404);
     const result = {
       ok: true,
       echo: args,

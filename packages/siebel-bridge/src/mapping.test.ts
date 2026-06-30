@@ -1,9 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { mapSiebelAccountToLegacyOps, mapSiebelCategoryToLegacyOps, mapSiebelContactToCustomer, mapSiebelSRToCase } from '@legacyops/siebel-bridge';
+import {
+  mapSiebelAccountToLegacyOps,
+  mapSiebelCategoryToLegacyOps,
+  mapSiebelContactToCustomer,
+  mapSiebelSRToCase
+} from '@legacyops/siebel-bridge';
 
 describe('siebel → legacyops object mapping', () => {
   it('maps an account', () => {
-    const out = mapSiebelAccountToLegacyOps({ id: 'ext_1', name: 'Acme', bu: 'BU_N', status: 'Active', currency: 'USD' });
+    const out = mapSiebelAccountToLegacyOps({
+      id: 'ext_1',
+      name: 'Acme',
+      bu: 'BU_N',
+      status: 'Active',
+      currency: 'USD'
+    });
     expect(out.status).toBe('active');
     expect(out.currency).toBe('USD');
   });
@@ -21,10 +32,17 @@ describe('siebel → legacyops object mapping', () => {
 
   it('maps a service request to a case', () => {
     const sr = {
-      id: 'ext_sr1', accountId: 'ext_a1', contactId: 'ext_c1',
-      status: 'Open' as const, priority: '1-High' as const,
-      category: 'Billing Dispute', subject: 'Bad invoice', description: 'desc',
-      owner: 'usr_op1', created: '2026-01-01T00:00:00.000Z', updated: '2026-01-02T00:00:00.000Z',
+      id: 'ext_sr1',
+      accountId: 'ext_a1',
+      contactId: 'ext_c1',
+      status: 'Open' as const,
+      priority: '1-High' as const,
+      category: 'Billing Dispute',
+      subject: 'Bad invoice',
+      description: 'desc',
+      owner: 'usr_op1',
+      created: '2026-01-01T00:00:00.000Z',
+      updated: '2026-01-02T00:00:00.000Z',
       srNumber: '1-12345'
     };
     const c = mapSiebelSRToCase(sr, 'cust_1');

@@ -5,15 +5,7 @@
  * See docs/SIEBEL_OBJECT_MAPPING.md for the conceptual mapping table.
  */
 
-import type {
-  Account,
-  Case,
-  ContactMethod,
-  Customer,
-  Interaction,
-  Invoice,
-  ServiceOrder
-} from '@legacyops/domain';
+import type { Account, Case, ContactMethod, Customer, Interaction, Invoice, ServiceOrder } from '@legacyops/domain';
 import type { ExternalId } from '@legacyops/shared';
 import type {
   SiebelAccount,
@@ -25,7 +17,9 @@ import type {
 } from '../contracts/types.js';
 
 // ---------- Siebel → LegacyOps ----------
-export function mapSiebelAccountToLegacyOps(a: SiebelAccount): Pick<Account, 'externalId' | 'status' | 'currency' | 'segment'> {
+export function mapSiebelAccountToLegacyOps(
+  a: SiebelAccount
+): Pick<Account, 'externalId' | 'status' | 'currency' | 'segment'> {
   const statusMap: Record<SiebelAccount['status'], Account['status']> = {
     Active: 'active',
     Inactive: 'closed',
@@ -99,7 +93,10 @@ export function mapSiebelCategoryToLegacyOps(category: string): Case['category']
   return 'general_inquiry';
 }
 
-export function mapSiebelActivityToInteraction(a: SiebelActivity, customerId: string): Omit<Interaction, 'id' | 'agentId'> {
+export function mapSiebelActivityToInteraction(
+  a: SiebelActivity,
+  customerId: string
+): Omit<Interaction, 'id' | 'agentId'> {
   const channelMap: Record<SiebelActivity['type'], Interaction['channel']> = {
     Call: 'voice',
     Email: 'email',
@@ -118,7 +115,11 @@ export function mapSiebelActivityToInteraction(a: SiebelActivity, customerId: st
   };
 }
 
-export function mapSiebelAssetToServiceOrder(a: SiebelAsset, customerId: string, accountId: string): Omit<ServiceOrder, 'id' | 'createdAt'> {
+export function mapSiebelAssetToServiceOrder(
+  a: SiebelAsset,
+  customerId: string,
+  accountId: string
+): Omit<ServiceOrder, 'id' | 'createdAt'> {
   return {
     customerId: customerId as Customer['id'],
     accountId: accountId as Account['id'],
@@ -129,7 +130,11 @@ export function mapSiebelAssetToServiceOrder(a: SiebelAsset, customerId: string,
   };
 }
 
-export function mapSiebelOrderToServiceOrder(o: SiebelOrder, customerId: string, accountId: string): Omit<ServiceOrder, 'id' | 'createdAt'> {
+export function mapSiebelOrderToServiceOrder(
+  o: SiebelOrder,
+  customerId: string,
+  accountId: string
+): Omit<ServiceOrder, 'id' | 'createdAt'> {
   const typeMap: Record<SiebelOrder['type'], ServiceOrder['type']> = {
     New: 'install',
     Change: 'change',
@@ -153,7 +158,17 @@ export function mapSiebelOrderToServiceOrder(o: SiebelOrder, customerId: string,
 }
 
 export function mapSiebelInvoiceToLegacyOps(
-  inv: { id: string; accountId: string; period: string; totalAmount: number; paidAmount: number; currency: string; status: string; issuedAt: string; dueAt: string },
+  inv: {
+    id: string;
+    accountId: string;
+    period: string;
+    totalAmount: number;
+    paidAmount: number;
+    currency: string;
+    status: string;
+    issuedAt: string;
+    dueAt: string;
+  },
   accountId: string
 ): Invoice {
   const statusMap: Record<string, Invoice['status']> = {
@@ -178,7 +193,9 @@ export function mapSiebelInvoiceToLegacyOps(
 }
 
 // ---------- LegacyOps → Siebel ----------
-export function mapLegacyOpsCaseToSiebelSR(c: Case): Omit<SiebelServiceRequest, 'id' | 'created' | 'updated' | 'srNumber'> & { externalId?: string } {
+export function mapLegacyOpsCaseToSiebelSR(
+  c: Case
+): Omit<SiebelServiceRequest, 'id' | 'created' | 'updated' | 'srNumber'> & { externalId?: string } {
   const priorityMap: Record<Case['priority'], SiebelServiceRequest['priority']> = {
     urgent: '1-High',
     high: '1-High',

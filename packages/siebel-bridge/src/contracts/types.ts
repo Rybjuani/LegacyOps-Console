@@ -13,7 +13,7 @@ import type { ExternalId } from '@legacyops/shared';
 export interface SiebelAccount {
   id: ExternalId;
   name: string;
-  bu: string;           // Business Unit
+  bu: string; // Business Unit
   status: 'Active' | 'Inactive' | 'Suspended';
   currency: string;
   segment?: string;
@@ -41,7 +41,7 @@ export interface SiebelServiceRequest {
   owner?: string;
   created: string;
   updated: string;
-  srNumber: string;       // e.g. "1-2345678" — classic Siebel-like id
+  srNumber: string; // e.g. "1-2345678" — classic Siebel-like id
 }
 
 export interface SiebelAsset {
@@ -96,14 +96,14 @@ export interface SiebelBusinessService {
 
 // ---------- Errors & session ----------
 export type SiebelErrorCode =
-  | 'SBL-DBC-001'        // database-style error
-  | 'SBL-AUTH-001'       // session expired
-  | 'SBL-AUTH-002'       // permission denied
-  | 'SBL-BCS-001'        // business component not found
-  | 'SBL-BSR-001'        // business service not found
-  | 'SBL-EAI-001'        // integration layer timeout
-  | 'SBL-DAT-001'        // data conflict
-  | 'SBL-GEN-001';       // generic
+  | 'SBL-DBC-001' // database-style error
+  | 'SBL-AUTH-001' // session expired
+  | 'SBL-AUTH-002' // permission denied
+  | 'SBL-BCS-001' // business component not found
+  | 'SBL-BSR-001' // business service not found
+  | 'SBL-EAI-001' // integration layer timeout
+  | 'SBL-DAT-001' // data conflict
+  | 'SBL-GEN-001'; // generic
 
 export interface SiebelErrorShape {
   code: SiebelErrorCode;

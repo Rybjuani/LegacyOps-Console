@@ -24,7 +24,7 @@ export type CustomerSegment = 'residential' | 'business' | 'vip' | 'internal';
 
 export interface Customer {
   id: CustomerId;
-  externalId?: ExternalId;        // Populated only when mirrored from a legacy system
+  externalId?: ExternalId; // Populated only when mirrored from a legacy system
   segment: CustomerSegment;
   displayName: string;
   legalName?: string;
@@ -37,13 +37,7 @@ export interface Customer {
   updatedAt: string;
 }
 
-export type RiskFlag =
-  | 'vip'
-  | 'churn_risk'
-  | 'high_debt'
-  | 'recent_escalation'
-  | 'fraud_alert'
-  | 'special_handling';
+export type RiskFlag = 'vip' | 'churn_risk' | 'high_debt' | 'recent_escalation' | 'fraud_alert' | 'special_handling';
 
 export interface Account {
   id: AccountId;
@@ -134,13 +128,7 @@ export interface DebtRecord {
 
 // ---------- Case ----------
 export type CaseStatus =
-  | 'open'
-  | 'in_progress'
-  | 'waiting_customer'
-  | 'waiting_third_party'
-  | 'resolved'
-  | 'closed'
-  | 'cancelled';
+  'open' | 'in_progress' | 'waiting_customer' | 'waiting_third_party' | 'resolved' | 'closed' | 'cancelled';
 
 export type CasePriority = 'low' | 'normal' | 'high' | 'urgent';
 

@@ -9,31 +9,96 @@ function makeAdapter(): FakeSiebelAdapter {
       { id: 'ext_acc_2', name: 'Globex', bu: 'BU_S', status: 'Active', currency: 'USD', segment: 'residential' }
     ],
     contacts: [
-      { id: 'ext_cust_1', accountId: 'ext_acc_1', firstName: 'Ana', lastName: 'Paz', email: 'a@b.com', phone: '1', documentNumber: '1001' },
-      { id: 'ext_cust_2', accountId: 'ext_acc_2', firstName: 'Ben', lastName: 'Rae', email: 'b@c.com', phone: '2', documentNumber: '1002' }
+      {
+        id: 'ext_cust_1',
+        accountId: 'ext_acc_1',
+        firstName: 'Ana',
+        lastName: 'Paz',
+        email: 'a@b.com',
+        phone: '1',
+        documentNumber: '1001'
+      },
+      {
+        id: 'ext_cust_2',
+        accountId: 'ext_acc_2',
+        firstName: 'Ben',
+        lastName: 'Rae',
+        email: 'b@c.com',
+        phone: '2',
+        documentNumber: '1002'
+      }
     ],
     serviceRequests: [
       {
-        id: 'ext_sr_1', accountId: 'ext_acc_1', contactId: 'ext_cust_1',
-        status: 'Open', priority: '1-High', category: 'Billing Dispute',
-        subject: 'Bad invoice', description: 'desc', owner: 'usr_op1',
-        created: '2026-01-01T00:00:00.000Z', updated: '2026-01-02T00:00:00.000Z', srNumber: '1-12345'
+        id: 'ext_sr_1',
+        accountId: 'ext_acc_1',
+        contactId: 'ext_cust_1',
+        status: 'Open',
+        priority: '1-High',
+        category: 'Billing Dispute',
+        subject: 'Bad invoice',
+        description: 'desc',
+        owner: 'usr_op1',
+        created: '2026-01-01T00:00:00.000Z',
+        updated: '2026-01-02T00:00:00.000Z',
+        srNumber: '1-12345'
       }
     ],
     assets: [
       { id: 'ext_asset_1', accountId: 'ext_acc_1', productName: 'Fiber 500', status: 'Active', startDate: '2025-01-01' }
     ],
     activities: [
-      { id: 'ext_act_1', accountId: 'ext_acc_1', type: 'Call', status: 'Done', description: 'Call about invoice', planned: '2026-01-01', actual: '2026-01-01', owner: 'usr_op1' }
+      {
+        id: 'ext_act_1',
+        accountId: 'ext_acc_1',
+        type: 'Call',
+        status: 'Done',
+        description: 'Call about invoice',
+        planned: '2026-01-01',
+        actual: '2026-01-01',
+        owner: 'usr_op1'
+      }
     ],
     orders: [
-      { id: 'ext_ord_1', accountId: 'ext_acc_1', orderNumber: 'ORD-1', type: 'New', status: 'Completed', total: 100, currency: 'USD', created: '2025-12-01' }
+      {
+        id: 'ext_ord_1',
+        accountId: 'ext_acc_1',
+        orderNumber: 'ORD-1',
+        type: 'New',
+        status: 'Completed',
+        total: 100,
+        currency: 'USD',
+        created: '2025-12-01'
+      }
     ],
     invoices: [
-      { id: 'ext_inv_1', accountId: 'ext_acc_1', period: '2026-01', totalAmount: 100, paidAmount: 100, currency: 'USD', status: 'Paid', issuedAt: '2026-01-01', dueAt: '2026-01-15' }
+      {
+        id: 'ext_inv_1',
+        accountId: 'ext_acc_1',
+        period: '2026-01',
+        totalAmount: 100,
+        paidAmount: 100,
+        currency: 'USD',
+        status: 'Paid',
+        issuedAt: '2026-01-01',
+        dueAt: '2026-01-15'
+      }
     ]
   };
-  return new FakeSiebelAdapter(ds);
+  const adapter = new FakeSiebelAdapter(ds);
+  // Disable stochastic error simulation so tests are deterministic. The
+  // error simulator itself is exercised in the dedicated "rejects unknown
+  // business service" test below.
+  adapter.configureErrors({
+    timeoutRate: 0,
+    authFailureRate: 0,
+    permissionDeniedRate: 0,
+    conflictRate: 0,
+    partialDataRate: 0,
+    fixedLatencyMs: 0,
+    jitterMs: 0
+  });
+  return adapter;
 }
 
 describe('fake siebel adapter', () => {
@@ -81,7 +146,15 @@ describe('fake siebel adapter', () => {
 
   it('creates a service request', async () => {
     const a = makeAdapter();
-    a.configureErrors({ timeoutRate: 0, authFailureRate: 0, permissionDeniedRate: 0, conflictRate: 0, partialDataRate: 0, fixedLatencyMs: 0, jitterMs: 0 });
+    a.configureErrors({
+      timeoutRate: 0,
+      authFailureRate: 0,
+      permissionDeniedRate: 0,
+      conflictRate: 0,
+      partialDataRate: 0,
+      fixedLatencyMs: 0,
+      jitterMs: 0
+    });
     const before = (await a.listServiceRequests({})).length;
     const sr = await a.createServiceRequest({
       accountId: 'ext_acc_1',

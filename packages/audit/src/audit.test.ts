@@ -24,7 +24,14 @@ describe('audit event creation', () => {
   });
 
   it('records external adapter calls', () => {
-    const e = AuditEvents.externalAdapterCall('usr_op1' as never, 'operator', 'siebel-bridge', 'searchContacts', 120, true);
+    const e = AuditEvents.externalAdapterCall(
+      'usr_op1' as never,
+      'operator',
+      'siebel-bridge',
+      'searchContacts',
+      120,
+      true
+    );
     expect(e.metadata).toMatchObject({ adapter: 'siebel-bridge', durationMs: 120, success: true });
   });
 });

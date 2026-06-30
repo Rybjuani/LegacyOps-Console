@@ -18,14 +18,20 @@ export function WorkflowsPage() {
 
   function start() {
     if (!selected) return;
-    api.post<{ ok: true; data: WorkflowRun }>(`/workflows/${selected.id}/start`, { customerId, agentId: 'usr_operator1' })
+    api
+      .post<{ ok: true; data: WorkflowRun }>(`/workflows/${selected.id}/start`, {
+        customerId,
+        agentId: 'usr_operator1'
+      })
       .then((r) => setRuns((prev) => [r.data, ...prev]));
   }
 
   return (
     <div>
       <h1 className="page-title">Workflow Engine</h1>
-      <p className="page-subtitle">Guided operator workflows. Each step declares its required fields and is fully audited.</p>
+      <p className="page-subtitle">
+        Guided operator workflows. Each step declares its required fields and is fully audited.
+      </p>
 
       <div className="grid grid-2 mb">
         <div className="panel">
@@ -33,8 +39,12 @@ export function WorkflowsPage() {
           <ul className="list-clean">
             {workflows.map((w) => (
               <li key={w.id} className="row between">
-                <span>{w.name} <span className="muted">— {w.category}</span></span>
-                <button className="btn secondary" onClick={() => setSelected(w)}>Select</button>
+                <span>
+                  {w.name} <span className="muted">— {w.category}</span>
+                </span>
+                <button className="btn secondary" onClick={() => setSelected(w)}>
+                  Select
+                </button>
               </li>
             ))}
           </ul>
@@ -46,7 +56,9 @@ export function WorkflowsPage() {
             <strong>{selected?.name ?? '—'}</strong>
             <label className="muted">Customer ID</label>
             <input className="input" value={customerId} onChange={(e) => setCustomerId(e.target.value)} />
-            <button className="btn" onClick={start}>Start workflow</button>
+            <button className="btn" onClick={start}>
+              Start workflow
+            </button>
           </div>
         </div>
       </div>
@@ -60,7 +72,9 @@ export function WorkflowsPage() {
                 <div className="step-id">{s.id}</div>
                 <div className="step-label">{s.label}</div>
                 <div className="muted">{s.description}</div>
-                <div className="muted" style={{ marginTop: 6 }}>Required: {s.requiredFields.join(', ')}</div>
+                <div className="muted" style={{ marginTop: 6 }}>
+                  Required: {s.requiredFields.join(', ')}
+                </div>
               </div>
             ))}
           </div>
@@ -70,16 +84,31 @@ export function WorkflowsPage() {
       <div className="panel">
         <h3>Recent runs ({runs.length})</h3>
         <table>
-          <thead><tr><th>Run</th><th>Workflow</th><th>Customer</th><th>Status</th><th>Started</th><th>Steps</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Run</th>
+              <th>Workflow</th>
+              <th>Customer</th>
+              <th>Status</th>
+              <th>Started</th>
+              <th>Steps</th>
+            </tr>
+          </thead>
           <tbody>
             {runs.map((r) => (
               <tr key={r.id}>
                 <td className="muted">{r.id.slice(0, 18)}…</td>
                 <td>{r.workflowName}</td>
                 <td className="muted">{r.customerId}</td>
-                <td><span className={`pill ${r.status === 'completed' ? 'ok' : r.status === 'active' ? 'accent' : ''}`}>{r.status}</span></td>
+                <td>
+                  <span className={`pill ${r.status === 'completed' ? 'ok' : r.status === 'active' ? 'accent' : ''}`}>
+                    {r.status}
+                  </span>
+                </td>
                 <td className="muted">{r.startedAt.slice(0, 16).replace('T', ' ')}</td>
-                <td>{r.steps.filter((s) => s.status === 'completed').length}/{r.steps.length}</td>
+                <td>
+                  {r.steps.filter((s) => s.status === 'completed').length}/{r.steps.length}
+                </td>
               </tr>
             ))}
           </tbody>

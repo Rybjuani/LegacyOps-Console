@@ -39,14 +39,7 @@ const ALL_PERMISSIONS: Permission[] = [
 ];
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
-  operator: [
-    'customer:read',
-    'case:create',
-    'case:update',
-    'billing:read',
-    'workflow:run',
-    'audit:read'
-  ],
+  operator: ['customer:read', 'case:create', 'case:update', 'billing:read', 'workflow:run', 'audit:read'],
   senior_operator: [
     'customer:read',
     'customer:update',
@@ -91,14 +84,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'workflow:run',
     'audit:read'
   ],
-  collections_agent: [
-    'customer:read',
-    'case:create',
-    'case:update',
-    'billing:read',
-    'workflow:run',
-    'audit:read'
-  ],
+  collections_agent: ['customer:read', 'case:create', 'case:update', 'billing:read', 'workflow:run', 'audit:read'],
   auditor: ['customer:read', 'case:update', 'audit:read', 'integration:configure'],
   admin: ALL_PERMISSIONS
 };
@@ -120,7 +106,10 @@ export function assertCan(role: Role, permission: Permission): void {
 }
 
 export class PermissionDeniedError extends Error {
-  constructor(public readonly role: Role, public readonly permission: Permission) {
+  constructor(
+    public readonly role: Role,
+    public readonly permission: Permission
+  ) {
     super(`Permission denied: role "${role}" lacks "${permission}"`);
     this.name = 'PermissionDeniedError';
   }

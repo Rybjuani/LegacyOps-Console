@@ -3,9 +3,7 @@
  */
 
 // ---------- API response envelope ----------
-export type ApiResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: ApiError };
+export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: ApiError };
 
 export interface ApiError {
   code: string;

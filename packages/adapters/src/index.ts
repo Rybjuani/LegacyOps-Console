@@ -11,14 +11,7 @@
  * anti-corruption layer (see docs/ANTI_CORRUPTION_LAYER.md).
  */
 
-import type {
-  Account,
-  Case,
-  Customer,
-  Interaction,
-  Invoice,
-  Payment
-} from '@legacyops/domain';
+import type { Account, Case, Customer, Interaction, Invoice, Payment } from '@legacyops/domain';
 
 // ---------- Common adapter primitives ----------
 export interface AdapterHealth {
@@ -71,7 +64,10 @@ export interface CRMAdapter {
 // ---------- Billing Adapter ----------
 export interface BillingAdapter {
   name: string;
-  getBillingSummary(accountId: string, ctx?: AdapterCallContext): Promise<{
+  getBillingSummary(
+    accountId: string,
+    ctx?: AdapterCallContext
+  ): Promise<{
     accountId: string;
     totalDue: number;
     nextDueDate?: string;
@@ -85,21 +81,30 @@ export interface BillingAdapter {
 // ---------- Ticketing Adapter ----------
 export interface TicketingAdapter {
   name: string;
-  createExternalTicket(input: { subject: string; description: string; customerId: string }, ctx?: AdapterCallContext): Promise<{ externalId: string; url?: string }>;
+  createExternalTicket(
+    input: { subject: string; description: string; customerId: string },
+    ctx?: AdapterCallContext
+  ): Promise<{ externalId: string; url?: string }>;
   getExternalTicket(externalId: string, ctx?: AdapterCallContext): Promise<{ status: string; updatedAt: string }>;
 }
 
 // ---------- Auth Adapter ----------
 export interface AuthAdapter {
   name: string;
-  authenticate(credentials: { username: string; password: string }, ctx?: AdapterCallContext): Promise<{ userId: string; username: string; role: string; token: string }>;
+  authenticate(
+    credentials: { username: string; password: string },
+    ctx?: AdapterCallContext
+  ): Promise<{ userId: string; username: string; role: string; token: string }>;
   verifyToken(token: string, ctx?: AdapterCallContext): Promise<{ userId: string; role: string }>;
 }
 
 // ---------- Knowledge Base Adapter ----------
 export interface KnowledgeBaseAdapter {
   name: string;
-  searchArticles(query: string, ctx?: AdapterCallContext): Promise<{ id: string; title: string; snippet: string; url?: string }[]>;
+  searchArticles(
+    query: string,
+    ctx?: AdapterCallContext
+  ): Promise<{ id: string; title: string; snippet: string; url?: string }[]>;
   getArticle(id: string, ctx?: AdapterCallContext): Promise<{ id: string; title: string; body: string } | undefined>;
 }
 
