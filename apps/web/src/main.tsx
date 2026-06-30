@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './styles/global.css';
 import { Layout } from './components/Layout';
 import { DashboardPage } from './pages/DashboardPage';
+import { InteractionConsolePage } from './pages/InteractionConsolePage';
 import { CustomerSearchPage } from './pages/CustomerSearchPage';
 import { Customer360Page } from './pages/Customer360Page';
 import { CasesPage } from './pages/CasesPage';
@@ -23,6 +24,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route element={<Layout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/interaction-console" element={<InteractionConsolePage />} />
           <Route path="/customers" element={<CustomerSearchPage />} />
           <Route path="/customers/:id" element={<Customer360Page />} />
           <Route path="/cases" element={<CasesPage />} />

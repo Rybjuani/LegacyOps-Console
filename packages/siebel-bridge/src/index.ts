@@ -10,6 +10,7 @@
 
 export * from './contracts/types.js';
 export * from './contracts/siebel.js';
+export * from './contracts/transports.js';
 export * from './mapping/siebelToLegacyOps.js';
 export * from './mapping/legacyOpsToSiebel.js';
 export * from './mock/FakeSiebelAdapter.js';

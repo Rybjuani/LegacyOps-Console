@@ -10,6 +10,8 @@ import type {
   Account,
   AuditEvent,
   Case,
+  CaseComment,
+  CaseEscalation,
   ContactMethod,
   Contract,
   Customer,
@@ -21,6 +23,7 @@ import type {
   Payment,
   Product,
   Queue,
+  QueueAssignment,
   Service,
   ServiceOrder,
   Team,
@@ -325,6 +328,9 @@ export interface LegacyOpsDataset {
   payments: Payment[];
   debts: DebtRecord[];
   cases: Case[];
+  caseComments?: CaseComment[];
+  caseEscalations?: CaseEscalation[];
+  queueAssignments?: QueueAssignment[];
   interactions: Interaction[];
   serviceOrders: ServiceOrder[];
   knowledgeArticles: KnowledgeArticle[];
@@ -640,6 +646,51 @@ export function buildDataset(): LegacyOpsDataset {
     }))
   };
 
+  // ---------- Case comments + escalations + queue assignments (B4 seed) ----------
+  const caseComments: CaseComment[] = [];
+  const caseEscalations: CaseEscalation[] = [];
+  const queueAssignments: QueueAssignment[] = [];
+  for (let i = 0; i < Math.min(cases.length, 8); i++) {
+    const c = cases[i]!;
+    caseComments.push({
+      id: `cc_${i}_1`,
+      caseId: c.id,
+      authorId: c.assigneeId ?? users[0]!.id,
+      body: `Initial triage for ${c.subject}. Customer described the issue and we logged it.`,
+      internal: false,
+      createdAt: c.createdAt
+    });
+    caseComments.push({
+      id: `cc_${i}_2`,
+      caseId: c.id,
+      authorId: users[2]!.id,
+      body: `Internal: check billing backend before responding to customer.`,
+      internal: true,
+      createdAt: addDays(c.createdAt, 1)
+    });
+    if (i % 4 === 0) {
+      caseEscalations.push({
+        id: `esc_${i}`,
+        caseId: c.id,
+        fromAssigneeId: c.assigneeId,
+        toAssigneeId: users[1]!.id,
+        fromQueueId: c.queueId,
+        toQueueId: 'q_voice_general',
+        reason: 'Customer requested supervisor after first response.',
+        escalatedAt: addDays(c.createdAt, 2),
+        escalatedBy: users[2]!.id
+      });
+    }
+    queueAssignments.push({
+      id: `qa_${i}`,
+      queueId: c.queueId ?? 'q_voice_general',
+      caseId: c.id,
+      assigneeId: c.assigneeId,
+      assignedAt: c.createdAt,
+      reason: 'round_robin'
+    });
+  }
+
   cache = {
     users,
     teams,
@@ -654,6 +705,9 @@ export function buildDataset(): LegacyOpsDataset {
     payments,
     debts,
     cases,
+    caseComments,
+    caseEscalations,
+    queueAssignments,
     interactions,
     serviceOrders,
     knowledgeArticles,

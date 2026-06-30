@@ -62,6 +62,83 @@ export const AuditEvents = {
       metadata: { changes }
     }),
 
+  caseAssigned: (
+    actorId: UserId,
+    actorRole: string,
+    caseId: string,
+    toAssigneeId: string | undefined,
+    queueId: string | undefined,
+    reason: string
+  ): AuditEvent =>
+    createAuditEvent({
+      type: 'case.assigned',
+      actorId,
+      actorRole,
+      target: { kind: 'Case', id: caseId },
+      metadata: { toAssigneeId, queueId, reason }
+    }),
+
+  caseEscalated: (
+    actorId: UserId,
+    actorRole: string,
+    caseId: string,
+    toAssigneeId: string | undefined,
+    toQueueId: string | undefined,
+    reason: string
+  ): AuditEvent =>
+    createAuditEvent({
+      type: 'case.escalated',
+      actorId,
+      actorRole,
+      target: { kind: 'Case', id: caseId },
+      metadata: { toAssigneeId, toQueueId, reason }
+    }),
+
+  caseCommentAdded: (
+    actorId: UserId,
+    actorRole: string,
+    caseId: string,
+    commentId: string,
+    internal: boolean
+  ): AuditEvent =>
+    createAuditEvent({
+      type: 'case.comment_added',
+      actorId,
+      actorRole,
+      target: { kind: 'Case', id: caseId },
+      metadata: { commentId, internal }
+    }),
+
+  interactionStarted: (
+    actorId: UserId,
+    actorRole: string,
+    interactionId: string,
+    customerId: string,
+    channel: string,
+    reason: string
+  ): AuditEvent =>
+    createAuditEvent({
+      type: 'interaction.started',
+      actorId,
+      actorRole,
+      target: { kind: 'Interaction', id: interactionId },
+      metadata: { customerId, channel, reason }
+    }),
+
+  interactionClosed: (
+    actorId: UserId,
+    actorRole: string,
+    interactionId: string,
+    outcome: string | undefined
+  ): AuditEvent =>
+    createAuditEvent({
+      type: 'interaction.closed',
+      actorId,
+      actorRole,
+      target: { kind: 'Interaction', id: interactionId },
+      metadata: { outcome }
+    }),
+
   workflowStarted: (
     actorId: UserId,
     actorRole: string,

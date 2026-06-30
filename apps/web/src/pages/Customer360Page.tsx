@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import type { Account, Case, ContactMethod, Contract, Customer, DebtRecord, Service } from '@legacyops/domain';
 
@@ -10,6 +10,28 @@ interface Customer360 {
   contracts: Contract[];
   services: Service[];
   debts: DebtRecord[];
+}
+
+function SourceBadge({
+  source
+}: {
+  source: 'legacyops_native' | 'fake_siebel_lab' | 'billing_mock' | 'migration_mapped' | 'synthetic_dataset';
+}) {
+  const labels: Record<string, string> = {
+    legacyops_native: 'LegacyOps',
+    fake_siebel_lab: 'Siebel Lab',
+    billing_mock: 'Billing mock',
+    migration_mapped: 'Migration-mapped',
+    synthetic_dataset: 'Synthetic'
+  };
+  const classes: Record<string, string> = {
+    legacyops_native: 'pill accent',
+    fake_siebel_lab: 'pill ok',
+    billing_mock: 'pill warn',
+    migration_mapped: 'pill accent',
+    synthetic_dataset: 'pill'
+  };
+  return <span className={classes[source]}>{labels[source]}</span>;
 }
 
 export function Customer360Page() {
@@ -42,23 +64,32 @@ export function Customer360Page() {
 
   return (
     <div>
-      <h1 className="page-title">{c.displayName}</h1>
-      <p className="page-subtitle">
-        <span className="pill accent" style={{ marginRight: 8 }}>
-          {c.segment}
-        </span>
-        {c.riskFlags.map((f) => (
-          <span key={f} className="pill warn" style={{ marginRight: 8 }}>
-            {f}
-          </span>
-        ))}
-        <span className="muted">Customer ID: {c.id}</span>
-        {c.externalId && (
-          <span className="muted" style={{ marginLeft: 12 }}>
-            External ID (legacy): {c.externalId}
-          </span>
-        )}
-      </p>
+      <div className="row between">
+        <div>
+          <h1 className="page-title">
+            {c.displayName} <SourceBadge source={c.externalId ? 'fake_siebel_lab' : 'legacyops_native'} />
+          </h1>
+          <p className="page-subtitle">
+            <span className="pill accent" style={{ marginRight: 8 }}>
+              {c.segment}
+            </span>
+            {c.riskFlags.map((f) => (
+              <span key={f} className="pill warn" style={{ marginRight: 8 }}>
+                {f}
+              </span>
+            ))}
+            <span className="muted">Customer ID: {c.id}</span>
+            {c.externalId && (
+              <span className="muted" style={{ marginLeft: 12 }}>
+                External ID (legacy): {c.externalId}
+              </span>
+            )}
+          </p>
+        </div>
+        <Link to="/customers" className="btn secondary">
+          ← Back to search
+        </Link>
+      </div>
 
       <div className="grid grid-2 mb">
         <div className="panel">
@@ -123,6 +154,7 @@ export function Customer360Page() {
                 <th>Service</th>
                 <th>Status</th>
                 <th>Since</th>
+                <th>Source</th>
               </tr>
             </thead>
             <tbody>
@@ -133,6 +165,9 @@ export function Customer360Page() {
                     <span className={`pill ${s.status === 'active' ? 'ok' : 'warn'}`}>{s.status}</span>
                   </td>
                   <td className="muted">{s.activatedAt.slice(0, 10)}</td>
+                  <td>
+                    <SourceBadge source={s.externalId ? 'fake_siebel_lab' : 'legacyops_native'} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -162,6 +197,9 @@ export function Customer360Page() {
                   <span className="value">{billing.debts.length}</span>
                 </div>
               </div>
+              <p className="muted" style={{ marginTop: 8 }}>
+                <SourceBadge source="billing_mock" /> Billing data served by the synthetic billing mock.
+              </p>
             </>
           ) : (
             <span className="muted">Loading…</span>
@@ -179,6 +217,7 @@ export function Customer360Page() {
                 <th>Status</th>
                 <th>Priority</th>
                 <th>Category</th>
+                <th>Source</th>
               </tr>
             </thead>
             <tbody>
@@ -196,30 +235,44 @@ export function Customer360Page() {
                     </span>
                   </td>
                   <td className="muted">{cs.category}</td>
+                  <td>
+                    <SourceBadge source={cs.externalId ? 'migration_mapped' : 'legacyops_native'} />
+                  </td>
                 </tr>
               ))}
+              {cases.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="muted">
+                    No cases for this customer.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
         <div className="panel">
           <h3>Interaction timeline</h3>
           {timeline ? (
-            <ul className="list-clean">
-              {timeline.items.slice(0, 12).map((it, i) => {
-                const item = it.item as { subject?: string; reason?: string; summary?: string };
-                return (
-                  <li key={i} className="row between">
-                    <span>
-                      <span className="pill accent" style={{ marginRight: 8 }}>
-                        {it.kind}
+            timeline.items.length === 0 ? (
+              <p className="muted">No interactions recorded for this customer.</p>
+            ) : (
+              <ul className="list-clean">
+                {timeline.items.slice(0, 12).map((it, i) => {
+                  const item = it.item as { subject?: string; reason?: string; summary?: string };
+                  return (
+                    <li key={i} className="row between">
+                      <span>
+                        <span className="pill accent" style={{ marginRight: 8 }}>
+                          {it.kind}
+                        </span>
+                        {item.subject ?? item.reason ?? item.summary ?? '—'}
                       </span>
-                      {item.subject ?? item.reason ?? item.summary ?? '—'}
-                    </span>
-                    <span className="muted">{it.at.slice(0, 16).replace('T', ' ')}</span>
-                  </li>
-                );
-              })}
-            </ul>
+                      <span className="muted">{it.at.slice(0, 16).replace('T', ' ')}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
           ) : (
             <span className="muted">Loading…</span>
           )}

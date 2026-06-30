@@ -1,6 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import type { AppState } from '../state.js';
-import { completeWorkflowStep, findDemoWorkflow, listDemoWorkflows, startWorkflow } from '@legacyops/workflows';
+import {
+  cancelWorkflowRun,
+  completeWorkflowStep,
+  findDemoWorkflow,
+  listDemoWorkflows,
+  startWorkflow,
+  summarizeWorkflowRun,
+  canCompleteStep
+} from '@legacyops/workflows';
 import { AuditEvents } from '@legacyops/audit';
 import type { WorkflowRun } from '@legacyops/domain';
 import { id as makeId } from '@legacyops/shared';
@@ -82,8 +90,61 @@ export async function registerWorkflowRoutes(app: FastifyInstance, state: AppSta
     const run = state.dataset.workflowRuns.find((r) => r.id === id);
     if (!run)
       return reply.status(404).send({ ok: false, error: { code: 'NOT_FOUND', message: 'Workflow run not found' } });
-    return { run };
+    const wf = findDemoWorkflow(run.workflowId);
+    return { run, summary: summarizeWorkflowRun(run, wf) };
   });
+
+  // ---------- Cancel workflow run (B5) ----------
+  app.post('/workflow-runs/:id/cancel', { preHandler: withPermission('workflow:run') }, async (req, reply) => {
+    const id = (req.params as { id: string }).id;
+    const body = req.body as { agentId?: string; actorRole?: string } | null;
+    const role = (req as unknown as { role: string }).role;
+    const actorId = (req as unknown as { actorId: string }).actorId;
+    const run = state.dataset.workflowRuns.find((r) => r.id === id);
+    if (!run)
+      return reply.status(404).send({ ok: false, error: { code: 'NOT_FOUND', message: 'Workflow run not found' } });
+    try {
+      const cancelled = cancelWorkflowRun(run);
+      const idx = state.dataset.workflowRuns.findIndex((r) => r.id === id);
+      state.dataset.workflowRuns[idx] = cancelled;
+      // Append a workflow.cancelled audit event. The audit package does
+      // not yet expose a dedicated builder for this, so we use the
+      // generic createAuditEvent via the AuditEvents namespace pattern.
+      state.auditLog.append({
+        ...AuditEvents.workflowStarted(
+          (body?.agentId ?? actorId ?? 'usr_operator1') as never,
+          body?.actorRole ?? role,
+          cancelled.id,
+          cancelled.workflowId,
+          cancelled.customerId
+        ),
+        type: 'workflow.cancelled'
+      });
+      return { ok: true, data: cancelled };
+    } catch (e) {
+      return reply.status(400).send({ ok: false, error: { code: 'BAD_REQUEST', message: (e as Error).message } });
+    }
+  });
+
+  // ---------- Step role check (B5) ----------
+  app.get(
+    '/workflow-runs/:id/can-complete/:stepId',
+    { preHandler: withPermission('workflow:run') },
+    async (req, reply) => {
+      const { id, stepId } = req.params as { id: string; stepId: string };
+      const role = (req as unknown as { role: string }).role as never;
+      const run = state.dataset.workflowRuns.find((r) => r.id === id);
+      if (!run)
+        return reply.status(404).send({ ok: false, error: { code: 'NOT_FOUND', message: 'Workflow run not found' } });
+      const wf = findDemoWorkflow(run.workflowId);
+      if (!wf)
+        return reply
+          .status(500)
+          .send({ ok: false, error: { code: 'INTERNAL', message: 'Workflow definition missing' } });
+      const allowed = canCompleteStep(wf, stepId, role);
+      return { allowed, stepId, role };
+    }
+  );
 }
 
 // Helper to create a synthetic run (for demo seeding)

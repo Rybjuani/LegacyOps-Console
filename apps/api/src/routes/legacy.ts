@@ -74,4 +74,80 @@ export async function registerLegacyRoutes(app: FastifyInstance, state: AppState
     const siebelSnap = state.siebelMetrics.snapshot(state.metrics);
     return { operational: snap, legacy: siebelSnap, activeSessions: state.siebelMetrics };
   });
+
+  // ---------- B8: Prometheus-like text endpoint ----------
+  // Returns metrics in Prometheus text exposition format. Useful for
+  // scraping with prometheus / grafana agent. NOT protected by RBAC
+  // because Prometheus scrapers typically do not send role headers; in a
+  // real deployment this endpoint would be behind an internal-only ingress.
+  app.get('/legacy/metrics/prometheus', async (_req, reply) => {
+    const siebelSnap = state.siebelMetrics.snapshot(state.metrics);
+    const opSnap = state.metrics.snapshot();
+    const lines: string[] = [];
+
+    lines.push('# HELP legacyops_legacy_sessions_active Active sessions in the Fake Siebel Lab.');
+    lines.push('# TYPE legacyops_legacy_sessions_active gauge');
+    lines.push(
+      `legacyops_legacy_sessions_active ${siebelSnap.find((m) => m.name === 'siebel_sessions_active')?.value ?? 0}`
+    );
+
+    lines.push('# HELP legacyops_legacy_queue_depth Queue depth observed in the Fake Siebel Lab.');
+    lines.push('# TYPE legacyops_legacy_queue_depth gauge');
+    lines.push(`legacyops_legacy_queue_depth ${siebelSnap.find((m) => m.name === 'siebel_queue_depth')?.value ?? 0}`);
+
+    lines.push('# HELP legacyops_legacy_availability Availability ratio of the legacy system (0..1).');
+    lines.push('# TYPE legacyops_legacy_availability gauge');
+    lines.push(`legacyops_legacy_availability ${siebelSnap.find((m) => m.name === 'siebel_availability')?.value ?? 0}`);
+
+    lines.push('# HELP legacyops_legacy_failed_calls_total Total failed legacy adapter calls.');
+    lines.push('# TYPE legacyops_legacy_failed_calls_total counter');
+    lines.push(
+      `legacyops_legacy_failed_calls_total ${siebelSnap.find((m) => m.name === 'siebel_failed_calls_total')?.value ?? 0}`
+    );
+
+    lines.push('# HELP legacyops_adapter_latency_ms Adapter latency percentiles in milliseconds.');
+    lines.push('# TYPE legacyops_adapter_latency_ms histogram');
+    for (const lat of opSnap.latencies) {
+      lines.push(
+        `legacyops_adapter_latency_ms{adapter="${lat.adapter}",operation="${lat.operation}",quantile="0.5"} ${lat.p50Ms}`
+      );
+      lines.push(
+        `legacyops_adapter_latency_ms{adapter="${lat.adapter}",operation="${lat.operation}",quantile="0.95"} ${lat.p95Ms}`
+      );
+      lines.push(
+        `legacyops_adapter_latency_ms{adapter="${lat.adapter}",operation="${lat.operation}",quantile="0.99"} ${lat.p99Ms}`
+      );
+    }
+
+    lines.push('# HELP legacyops_legacy_component_status Component health (1=healthy, 0=degraded/down).');
+    lines.push('# TYPE legacyops_legacy_component_status gauge');
+    const health = await state.siebelMetrics.checkAll();
+    for (const c of health.components) {
+      const value = c.status === 'healthy' ? 1 : 0;
+      lines.push(`legacyops_legacy_component_status{component="${c.name}"} ${value}`);
+    }
+
+    lines.push('# HELP legacyops_migration_conflict_count Total migration conflicts detected.');
+    lines.push('# TYPE legacyops_migration_conflict_count gauge');
+    lines.push(`legacyops_migration_conflict_count ${state.metrics.errorsList().length}`);
+
+    lines.push('# HELP legacyops_business_service_invocation_count Total business service invocations observed.');
+    lines.push('# TYPE legacyops_business_service_invocation_count counter');
+    lines.push(`legacyops_business_service_invocation_count ${opSnap.metrics.reduce((s, m) => s + m.value, 0)}`);
+
+    reply.type('text/plain; version=0.0.4; charset=utf-8').send(lines.join('\n') + '\n');
+  });
+
+  app.get('/legacy/components', { preHandler: withPermission('integration:configure') }, async () => {
+    const health = await state.siebelMetrics.checkAll();
+    return { items: health.components, overall: health.overall };
+  });
+
+  app.get('/legacy/errors', { preHandler: withPermission('integration:configure') }, async () => {
+    return { items: state.metrics.errorsList() };
+  });
+
+  app.get('/legacy/latency', { preHandler: withPermission('integration:configure') }, async () => {
+    return { items: state.metrics.latencyReport() };
+  });
 }

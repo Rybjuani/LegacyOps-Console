@@ -5,6 +5,7 @@ const nav = [
     group: 'Operations',
     items: [
       { to: '/dashboard', label: 'Dashboard' },
+      { to: '/interaction-console', label: 'Interaction Console' },
       { to: '/customers', label: 'Customer Search' },
       { to: '/cases', label: 'Cases' },
       { to: '/workflows', label: 'Workflows' },

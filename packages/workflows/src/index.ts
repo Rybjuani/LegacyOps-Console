@@ -9,6 +9,7 @@
 
 import type {
   CaseCategory,
+  Role,
   WorkflowDefinition,
   WorkflowRun,
   WorkflowRunStatus,
@@ -112,11 +113,29 @@ export function completeWorkflowStep(
   }
 
   const now = nowIso();
+  // Build the allCaptured map (stepId -> capturedFields) for completed
+  // steps, plus the current step being completed now.
+  const allCaptured: Record<string, Record<string, unknown>> = {};
+  for (const s of run.steps) {
+    if (s.status === 'completed') allCaptured[s.stepId] = { ...s.capturedFields };
+  }
+  allCaptured[stepId] = { ...capturedFields };
+
+  // Determine which step to activate next.
+  let nextStepId: string | null = null;
+  if (stepDef.nextStepId) {
+    nextStepId = stepDef.nextStepId(capturedFields, allCaptured);
+  }
+  if (nextStepId === null) {
+    // Fall through to the next declared step.
+    nextStepId = run.steps[stepIdx + 1]?.stepId ?? null;
+  }
+
   const newSteps: WorkflowRunStep[] = run.steps.map((s, idx) => {
     if (idx === stepIdx) {
       return { ...s, status: 'completed', capturedFields: { ...capturedFields }, completedAt: now };
     }
-    if (idx === stepIdx + 1 && s.status === 'pending') {
+    if (nextStepId && s.stepId === nextStepId && s.status === 'pending') {
       return { ...s, status: 'active', startedAt: now };
     }
     return s;
@@ -260,20 +279,180 @@ const technicalComplaint: WorkflowDefinition = {
   ]
 };
 
+const serviceOrderFollowup: WorkflowDefinition = {
+  id: 'wf_service_order_followup',
+  name: 'Service Order Followup',
+  category: 'service_request',
+  description: 'Tracks an open service order until completion, with conditional dispatch when on-site work is needed.',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  steps: [
+    {
+      id: 'identify_order',
+      label: 'Identify service order',
+      requiredFields: ['serviceOrderId', 'type'],
+      requiredRole: 'operator'
+    },
+    {
+      id: 'check_status',
+      label: 'Check status',
+      requiredFields: ['currentStatus', 'lastUpdatedAt'],
+      // Conditional: if status is completed, jump directly to verify.
+      // Otherwise, fall through to schedule_followup.
+      nextStepId: (captured) => (captured.currentStatus === 'completed' ? 'verify_completion' : null)
+    },
+    {
+      id: 'schedule_followup',
+      label: 'Schedule followup',
+      requiredFields: ['followupDate', 'dispatchNeeded'],
+      requiredRole: 'senior_operator'
+    },
+    {
+      id: 'verify_completion',
+      label: 'Verify completion',
+      requiredFields: ['verified', 'customerNotified']
+    }
+  ]
+};
+
+const legacyDataReconciliation: WorkflowDefinition = {
+  id: 'wf_legacy_data_reconciliation',
+  name: 'Legacy Data Reconciliation',
+  category: 'service_request',
+  description:
+    'Reconciles a LegacyOps record against the corresponding Siebel-like record and decides source-of-truth.',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  steps: [
+    {
+      id: 'pick_record',
+      label: 'Pick record to reconcile',
+      requiredFields: ['entity', 'internalId', 'externalId'],
+      requiredRole: 'backoffice'
+    },
+    {
+      id: 'fetch_both',
+      label: 'Fetch both copies',
+      requiredFields: ['internalSnapshot', 'externalSnapshot']
+    },
+    {
+      id: 'diff_fields',
+      label: 'Diff fields',
+      requiredFields: ['diffSummary', 'conflictCount']
+    },
+    {
+      id: 'decide_source_of_truth',
+      label: 'Decide source of truth',
+      requiredFields: ['ownerSystem', 'reason'],
+      requiredRole: 'backoffice',
+      // If there are conflicts, jump to resolve_conflicts. Otherwise, jump
+      // directly to finalize_reconciliation.
+      nextStepId: (_captured, allCaptured) => {
+        const diff = allCaptured['diff_fields'];
+        const count = typeof diff?.conflictCount === 'number' ? diff.conflictCount : 0;
+        return count > 0 ? null : 'finalize_reconciliation';
+      }
+    },
+    {
+      id: 'resolve_conflicts',
+      label: 'Resolve conflicts',
+      requiredFields: ['resolutions'],
+      requiredRole: 'backoffice'
+    },
+    {
+      id: 'finalize_reconciliation',
+      label: 'Finalize reconciliation',
+      requiredFields: ['finalized', 'auditNote']
+    }
+  ]
+};
+
 export const DEMO_WORKFLOWS: Record<CaseCategory, WorkflowDefinition[]> = {
   billing_claim: [billingClaim],
   cancellation_retention: [cancellationRetention],
   payment_promise: [paymentPromise],
   technical_complaint: [technicalComplaint],
-  service_request: [],
+  service_request: [serviceOrderFollowup, legacyDataReconciliation],
   general_inquiry: [],
   complaint: []
 };
 
 export function listDemoWorkflows(): WorkflowDefinition[] {
-  return [billingClaim, cancellationRetention, paymentPromise, technicalComplaint];
+  return [
+    billingClaim,
+    cancellationRetention,
+    paymentPromise,
+    technicalComplaint,
+    serviceOrderFollowup,
+    legacyDataReconciliation
+  ];
 }
 
 export function findDemoWorkflow(id: string): WorkflowDefinition | undefined {
   return listDemoWorkflows().find((w) => w.id === id);
+}
+
+// ---------- Workflow summary (B5) ----------
+export interface WorkflowSummary {
+  runId: string;
+  workflowId: string;
+  workflowName: string;
+  status: WorkflowRunStatus;
+  startedAt: string;
+  completedAt?: string;
+  totalSteps: number;
+  completedSteps: number;
+  activeStep?: string;
+  pendingSteps: string[];
+  skippedSteps: string[];
+  nextStepHint?: string;
+}
+
+export function summarizeWorkflowRun(run: WorkflowRun, def?: WorkflowDefinition): WorkflowSummary {
+  const completed = run.steps.filter((s) => s.status === 'completed').length;
+  const active = run.steps.find((s) => s.status === 'active');
+  const pending = run.steps.filter((s) => s.status === 'pending').map((s) => s.stepId);
+  const skipped = run.steps.filter((s) => s.status === 'skipped').map((s) => s.stepId);
+
+  let nextStepHint: string | undefined;
+  if (active && def) {
+    const defStep = def.steps.find((s) => s.id === active.stepId);
+    if (defStep?.requiredFields?.length) {
+      nextStepHint = `Capture: ${defStep.requiredFields.join(', ')}`;
+    } else {
+      nextStepHint = defStep?.label;
+    }
+  }
+
+  return {
+    runId: run.id,
+    workflowId: run.workflowId,
+    workflowName: run.workflowName,
+    status: run.status,
+    startedAt: run.startedAt,
+    completedAt: run.completedAt,
+    totalSteps: run.steps.length,
+    completedSteps: completed,
+    activeStep: active?.stepId,
+    pendingSteps: pending,
+    skippedSteps: skipped,
+    nextStepHint
+  };
+}
+
+// ---------- Step role check (B5) ----------
+export function canCompleteStep(def: WorkflowDefinition, stepId: string, role: Role): boolean {
+  const step = def.steps.find((s) => s.id === stepId);
+  if (!step) return false;
+  if (!step.requiredRole) return true;
+  return role === step.requiredRole || role === 'admin';
+}
+
+export class StepRoleDeniedError extends Error {
+  constructor(
+    public readonly stepId: string,
+    public readonly requiredRole: Role,
+    public readonly actualRole: Role
+  ) {
+    super(`Step "${stepId}" requires role "${requiredRole}" but current role is "${actualRole}"`);
+    this.name = 'StepRoleDeniedError';
+  }
 }
