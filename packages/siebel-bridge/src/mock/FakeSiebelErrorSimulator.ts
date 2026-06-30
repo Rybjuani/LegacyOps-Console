@@ -1,9 +1,13 @@
 /**
- * FakeSiebelErrorSimulator — deterministic simulation of integration failures.
+ * FakeSiebelErrorSimulator — simulation of integration failures.
  *
- * Used by the Fake Siebel Lab to reproduce classic integration pathologies
- * (timeouts, expired sessions, permission errors, conflicts, partial data)
- * without contacting any real backend.
+ * Two modes:
+ *  - "stochastic" (default, demo): probabilistic failure rates.
+ *  - "deterministic" (tests): forces a specific failure on the next call,
+ *    or throws on demand.
+ *
+ * The deterministic mode exists so test suites can exercise each error code
+ * without flakiness from Math.random().
  */
 
 import type { AdapterCallContext } from '@legacyops/adapters';
@@ -29,14 +33,57 @@ export const DEFAULT_ERROR_CONFIG: ErrorSimulationConfig = {
   jitterMs: 80
 };
 
+/**
+ * Deterministic error to inject on the next `maybeThrow` call.
+ * `null` means no forced error.
+ */
+export type DeterministicError =
+  'timeout' | 'auth_expired' | 'permission_denied' | 'conflict' | 'partial_data' | 'generic' | null;
+
+const DETERMINISTIC_TO_CODE: Record<Exclude<DeterministicError, null>, SiebelErrorCode> = {
+  timeout: 'SBL-EAI-001',
+  auth_expired: 'SBL-AUTH-001',
+  permission_denied: 'SBL-AUTH-002',
+  conflict: 'SBL-DAT-001',
+  partial_data: 'SBL-DAT-001',
+  generic: 'SBL-GEN-001'
+};
+
 export class FakeSiebelErrorSimulator {
+  private nextError: DeterministicError = null;
+  private nextPartialData: boolean | null = null;
+
   constructor(private cfg: ErrorSimulationConfig = DEFAULT_ERROR_CONFIG) {}
 
   configure(cfg: Partial<ErrorSimulationConfig>): void {
     this.cfg = { ...this.cfg, ...cfg };
   }
 
+  /**
+   * Force the next `maybeThrow` to raise the specified error. The forced
+   * error is consumed after one call. Pass `null` to clear.
+   */
+  setNextError(err: DeterministicError): void {
+    this.nextError = err;
+  }
+
+  /**
+   * Force the next `isPartialData` to return the specified value. The
+   * forced value is consumed after one call. Pass `null` to clear.
+   */
+  setNextPartialData(value: boolean | null): void {
+    this.nextPartialData = value;
+  }
+
   maybeThrow(ctx?: AdapterCallContext): void {
+    // Deterministic path takes priority.
+    if (this.nextError !== null) {
+      const code = DETERMINISTIC_TO_CODE[this.nextError];
+      this.nextError = null;
+      throw this.toError(code);
+    }
+
+    // Stochastic path (used in demo mode).
     const r = Math.random();
     if (r < this.cfg.timeoutRate) {
       throw this.toError('SBL-EAI-001');
@@ -54,6 +101,11 @@ export class FakeSiebelErrorSimulator {
   }
 
   isPartialData(): boolean {
+    if (this.nextPartialData !== null) {
+      const v = this.nextPartialData;
+      this.nextPartialData = null;
+      return v;
+    }
     return Math.random() < this.cfg.partialDataRate;
   }
 

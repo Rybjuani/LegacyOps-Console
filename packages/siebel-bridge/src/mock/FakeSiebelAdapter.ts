@@ -56,10 +56,10 @@ export class FakeSiebelAdapter implements SiebelBridge {
   constructor(private data: FakeSiebelDataset) {}
 
   // ----- session / auth -----
-  login(username: string, password: string) {
+  async login(username: string, password: string) {
     const s = this.sessions.login(username, password);
     if (!s) throw new AdapterError('Invalid credentials', 'auth', 401);
-    return Promise.resolve({ token: s.token, expiresAt: s.expiresAt, userId: s.userId });
+    return { token: s.token, expiresAt: s.expiresAt, userId: s.userId };
   }
 
   verify(token: string) {
@@ -280,6 +280,31 @@ export class FakeSiebelAdapter implements SiebelBridge {
 
   configureErrors(cfg: Parameters<FakeSiebelErrorSimulator['configure']>[0]): void {
     this.errors.configure(cfg);
+  }
+
+  /**
+   * Force the next adapter call to throw the specified deterministic error.
+   * The forced error is consumed after one call. Used by tests to exercise
+   * each error code without flakiness.
+   */
+  setNextError(err: Parameters<FakeSiebelErrorSimulator['setNextError']>[0]): void {
+    this.errors.setNextError(err);
+  }
+
+  /**
+   * Force the next `isPartialData` check to return the specified value.
+   * The forced value is consumed after one call. Used by tests.
+   */
+  setNextPartialData(value: boolean | null): void {
+    this.errors.setNextPartialData(value);
+  }
+
+  /**
+   * Direct access to the partial-data check. Exposed for tests; not used
+   * by the adapter's read paths in the current scaffold.
+   */
+  isPartialDataNow(): boolean {
+    return this.errors.isPartialData();
   }
 
   forceSessionExpiry(token: string): void {

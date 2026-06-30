@@ -76,3 +76,92 @@ jobs:
 
       - name: Prettier check
         run: pnpm format:check
+
+  secret-scan-lite:
+    name: secret-scan-lite (block obvious token leakage)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan for obvious secret patterns
+        run: |
+          set -e
+          # Lightweight secret scan — NOT a replacement for a real scanner
+          # like GitHub Advanced Security or trufflehog. Catches obvious
+          # token prefixes and private key blocks.
+          PATTERNS=(
+            'github_pat_'
+            'ghp_'
+            'gho_'
+            'ghu_'
+            'ghs_'
+            'ghr_'
+            'AKIA'
+            'xoxb-'
+            'BEGIN RSA PRIVATE KEY'
+            'BEGIN OPENSSH PRIVATE KEY'
+            'BEGIN PGP PRIVATE KEY BLOCK'
+          )
+          # Allowlist of paths that are allowed to *mention* these patterns
+          # in documentation context (e.g. SECURITY.md describing what we
+          # scan for).
+          ALLOWLIST='SECURITY.md:docs/SECURITY_NOTES.md:docs/ENTERPRISE_READINESS_GAP.md:.env.example'
+          HITS=0
+          for pat in "${PATTERNS[@]}"; do
+            while IFS= read -r line; do
+              file=$(echo "$line" | cut -d: -f1)
+              base=$(basename "$file")
+              ok=0
+              for allow in $(echo "$ALLOWLIST" | tr ':' ' '); do
+                if [ "$base" = "$allow" ]; then ok=1; break; fi
+              done
+              if [ "$ok" = "1" ]; then
+                echo "[allowed] $line"
+              else
+                echo "[BLOCK] $line"
+                HITS=$((HITS+1))
+              fi
+            done < <(grep -rIn --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=coverage "$pat" . || true)
+          done
+          if [ "$HITS" -gt "0" ]; then
+            echo "::error::secret-scan-lite blocked $HITS suspicious pattern(s). Rotate the secret and remove it from the repo."
+            exit 1
+          fi
+          echo "secret-scan-lite: no obvious secrets found."
+
+  dependency-audit:
+    name: pnpm audit (high / critical only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit (fail on high / critical)
+        run: |
+          # pnpm audit --prod returns non-zero if any vulnerability is found.
+          # We only fail the CI on high / critical; low / moderate are
+          # reported but tolerated to avoid noise (see SECURITY.md).
+          pnpm audit --prod --audit-level=high || {
+            echo "::warning::pnpm audit found high or critical vulnerabilities in production dependencies."
+            exit 1
+          }

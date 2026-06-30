@@ -113,23 +113,28 @@ Last verified on the commit referenced in `git log` for the
 | Capability | Status |
 |---|---|
 | Monorepo TypeScript pnpm | ✅ |
-| `apps/api` Fastify + RBAC simulation | ✅ |
+| `apps/api` Fastify v5 + RBAC simulation | ✅ |
 | `apps/web` React + Vite | ✅ |
 | 10 packages (domain, shared, audit, permissions, workflows, adapters, siebel-bridge, migration, legacy-observability, demo-data) | ✅ |
 | `pnpm install --frozen-lockfile` | ✅ reproducible |
 | `pnpm typecheck` | ✅ passes |
 | `pnpm lint` (ESLint 9 flat config, no errors) | ✅ passes |
 | `pnpm format:check` (Prettier) | ✅ passes |
-| `pnpm test` (unit + HTTP smoke tests) | ✅ 67 tests pass |
+| `pnpm test` (unit + HTTP smoke tests) | ✅ 103 tests pass |
 | `pnpm build` (packages + api + web) | ✅ passes |
-| GitHub Actions CI (Node 22) | ✅ workflow created |
+| `pnpm audit --prod --audit-level=high` | ✅ 0 vulnerabilities |
+| GitHub Actions CI (Node 22) | ✅ 4 jobs: verify, format-check, secret-scan-lite, dependency-audit |
 | RBAC enforcement in API (header-based) | ✅ simulated, not auth |
+| Deterministic error simulation tests | ✅ 24 tests, no flakiness |
 | SECURITY.md | ✅ |
 | Synthetic data only | ✅ |
-| No secrets in repo (verified by grep) | ✅ |
-| Real database | ❌ pending |
-| Real SSO/OIDC/SAML | ❌ pending |
-| Real Siebel REST adapter | ❌ pending |
+| No secrets in repo (CI scans for github_pat_, ghp_, AKIA, xoxb-, private key blocks) | ✅ |
+| Enterprise readiness issues | ✅ 5 issues opened (#1–#5) |
+| Real database | ❌ pending (issue #2) |
+| Real SSO/OIDC/SAML | ❌ pending (issue #1) |
+| Real Siebel REST adapter | ❌ pending (issue #4) |
+| Durable append-only audit log | ❌ pending (issue #3) |
+| Container image + Helm chart | ❌ pending (issue #5) |
 | Production deployment | ❌ pending |
 
 ---
@@ -304,12 +309,14 @@ See `docs/MIGRATION_STRATEGY.md` and `docs/INTEGRATION_MODES.md`.
 
 - ✅ Monorepo with pnpm 9 workspaces, TypeScript strict, ESM.
 - ✅ 10 packages: domain, shared, audit, permissions, workflows, adapters, siebel-bridge, migration, legacy-observability, demo-data.
-- ✅ Fastify API with all required endpoints + simulated RBAC enforcement.
+- ✅ Fastify v5 API with all required endpoints + simulated RBAC enforcement.
 - ✅ React + Vite UI with 12 panels.
-- ✅ 67 Vitest tests (47 unit + 20 HTTP smoke tests via Fastify `inject`).
+- ✅ 103 Vitest tests (79 unit + 24 HTTP smoke tests via Fastify `inject`).
 - ✅ ESLint 9 flat config + Prettier — both clean.
-- ✅ GitHub Actions CI (Node 22) — typecheck, lint, test, build, format.
+- ✅ GitHub Actions CI (Node 22) — 4 jobs: verify, format-check, secret-scan-lite, dependency-audit.
+- ✅ `pnpm audit --prod --audit-level=high` clean (0 vulnerabilities).
 - ✅ SECURITY.md, PR template, issue templates.
+- ✅ 5 enterprise-readiness issues opened (#1 SSO, #2 PostgreSQL, #3 durable audit, #4 real Siebel adapter, #5 container image).
 - ✅ Strategic documentation set (18 docs).
 - ⚠️ Synthetic data only.
 - ⚠️ No real database, no real Siebel adapter, no SSO/OIDC/SAML, no production hardening.

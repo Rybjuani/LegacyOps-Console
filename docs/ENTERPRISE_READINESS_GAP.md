@@ -23,6 +23,21 @@ on in-memory data and a Fake Siebel Lab. The hardening cycle added:
 - Pull request template and GitHub issue templates.
 - Secret scanning grep in CI for `github_pat_`, `ghp_`, `GITHUB_TOKEN=`.
 - Vitest test count: 67 (47 unit + 20 HTTP smoke).
+- **NEW (this cycle):** `secret-scan-lite` job in CI with allowlist for
+  documentation files that mention token patterns.
+- **NEW (this cycle):** `dependency-audit` job running
+  `pnpm audit --prod --audit-level=high`. Fails only on high/critical.
+- **NEW (this cycle):** Fastify upgraded to v5.7+ to close 3 high CVEs
+  (content-type bypass, fast-uri path traversal, fast-uri host confusion).
+- **NEW (this cycle):** Deterministic error simulation tests in
+  `packages/siebel-bridge/src/mock/FakeSiebelErrorSimulator.test.ts` and
+  `FakeSiebelAdapter.errors.test.ts` (24 new tests, no flakiness).
+- **NEW (this cycle):** Smoke tests expanded to 36 scenarios covering
+  RBAC edge cases (missing role, unknown role, casing), audit log
+  permission-denied events, and error envelope consistency (403/404/400).
+- **NEW (this cycle):** 5 enterprise-readiness issues opened for tracking:
+  #1 SSO/OIDC/SAML, #2 PostgreSQL, #3 durable audit log, #4 real Siebel
+  REST adapter, #5 container image + deployment.
 
 It is suitable for:
 

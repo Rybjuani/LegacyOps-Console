@@ -128,34 +128,45 @@ LegacyOps Console may eventually include optional AI assistance
 
 | Area | Status |
 |---|---|
-| Secrets in repo | ✅ None (verified by `grep -R` for common token prefixes) |
+| Secrets in repo | ✅ None (CI runs `secret-scan-lite` on every push/PR) |
 | `.env` ignored | ✅ |
 | Synthetic data only | ✅ |
 | RBAC enforcement in API | ✅ Simulated (header-based, not auth) |
-| Permission-denied audit events | ✅ |
+| Permission-denied audit events | ✅ Recorded in audit log |
 | CORS | ✅ Configurable via `CORS_ORIGIN` |
+| Dependency vulnerability scanning | ✅ `pnpm audit --prod --audit-level=high` in CI |
 | HTTPS / TLS termination | ❌ Handled by reverse proxy in production (not in scaffold) |
-| Rate limiting | ❌ Pending |
-| SSO / OIDC / SAML | ❌ Pending |
+| Rate limiting | ❌ Pending (tracked in issue #1) |
+| SSO / OIDC / SAML | ❌ Pending (tracked in issue #1) |
 | Secret management (Vault, KMS, etc.) | ❌ Pending |
 | Field-level encryption | ❌ Pending |
 | Threat model | ❌ Pending |
 | Penetration test | ❌ Pending |
 | Compliance (SOC 2, ISO 27001, GDPR, CCPA) | ❌ Pending |
-| Audit log durability (append-only, SIEM export) | ❌ Pending (in-memory only) |
-| Dependency vulnerability scanning | ⚠️ `pnpm audit` not wired into CI yet |
+| Audit log durability (append-only, SIEM export) | ❌ Pending (tracked in issue #3) |
 
 ---
 
 ## Dependency scanning
 
-To check dependencies for known vulnerabilities, run:
+CI runs `pnpm audit --prod --audit-level=high` on every push and pull
+request. The job fails only on `high` or `critical` vulnerabilities;
+`low` and `moderate` are reported but tolerated to avoid noise.
+
+To run the same check locally:
+
+```bash
+pnpm audit --prod --audit-level=high
+```
+
+The full audit (all severities) is available with:
 
 ```bash
 pnpm audit --prod
 ```
 
-This is NOT currently wired into CI. It is a tracked gap.
+Decision: fail on high/critical only. See `docs/ENTERPRISE_READINESS_GAP.md`
+for the rationale.
 
 ---
 

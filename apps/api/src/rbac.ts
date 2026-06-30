@@ -38,6 +38,12 @@ const KNOWN_ROLES: ReadonlySet<Role> = new Set<Role>([
   'admin'
 ]);
 
+// Module-level audit log reference. Set by registerRbacPlugin so that
+// requirePermission can append permission.denied events without needing
+// the request to flow through Fastify's onError hook (which is unreliable
+// when reply.send() was already called).
+let auditLogRef: InMemoryAuditLog | null = null;
+
 export function resolveRole(req: FastifyRequest): Role {
   const raw = (req.headers[HEADER_NAME] as string | undefined)?.trim();
   if (!raw) return DEFAULT_ROLE;
@@ -52,6 +58,8 @@ export function resolveRole(req: FastifyRequest): Role {
  * without re-reading the header.
  */
 export async function registerRbacPlugin(app: FastifyInstance, opts: { auditLog?: InMemoryAuditLog } = {}) {
+  auditLogRef = opts.auditLog ?? null;
+
   app.decorateRequest('role', DEFAULT_ROLE);
   app.decorateRequest('actorId', 'usr_anonymous');
 
@@ -60,17 +68,6 @@ export async function registerRbacPlugin(app: FastifyInstance, opts: { auditLog?
     (req as FastifyRequest & { role: Role }).role = role;
     (req as FastifyRequest & { actorId: string }).actorId = `usr_${role}`;
   });
-
-  if (opts.auditLog) {
-    const auditLog = opts.auditLog;
-    app.addHook('onError', async (req: FastifyRequest, reply: FastifyReply, error: Error) => {
-      if (error instanceof PermissionDeniedError) {
-        const role = (req as FastifyRequest & { role: Role }).role;
-        const actorId = (req as FastifyRequest & { actorId: string }).actorId as never;
-        auditLog.append(AuditEvents.permissionDenied(actorId, role, error.permission, `${req.method} ${req.url}`));
-      }
-    });
-  }
 }
 
 /**
@@ -78,8 +75,8 @@ export async function registerRbacPlugin(app: FastifyInstance, opts: { auditLog?
  *
  *   await requirePermission(req, reply, 'audit:read');
  *
- * On denial, replies 403 with the LegacyOps error envelope and throws to
- * stop handler execution.
+ * On denial, replies 403 with the LegacyOps error envelope, appends a
+ * permission.denied audit event, and throws to stop handler execution.
  */
 export async function requirePermission(
   req: FastifyRequest,
@@ -89,6 +86,12 @@ export async function requirePermission(
   const role = (req as FastifyRequest & { role: Role }).role;
   if (!can(role, permission)) {
     const denied = new PermissionDeniedError(role, permission);
+    // Append audit event directly — onError is unreliable once reply.send
+    // has been called.
+    if (auditLogRef) {
+      const actorId = (req as FastifyRequest & { actorId: string }).actorId as never;
+      auditLogRef.append(AuditEvents.permissionDenied(actorId, role, permission, `${req.method} ${req.url}`));
+    }
     await reply.status(403).send({
       ok: false,
       error: {

@@ -48,18 +48,19 @@ export async function buildServer() {
   await registerMigrationRoutes(app, state);
   await registerRoiRoutes(app, state);
 
-  app.setErrorHandler((err, req, reply) => {
+  app.setErrorHandler((err, _req, reply) => {
     // PermissionDeniedError: expected client error, do not log at error level
-    const isPermissionDenied = err.name === 'PermissionDeniedError';
+    const e = err as Error & { statusCode?: number; status?: number; code?: string };
+    const isPermissionDenied = e.name === 'PermissionDeniedError';
     if (!isPermissionDenied) {
       app.log.error({ err }, 'request error');
     }
-    const status = err.statusCode ?? (isPermissionDenied ? 403 : (err as { status?: number }).status) ?? 500;
+    const status = e.statusCode ?? (isPermissionDenied ? 403 : e.status) ?? 500;
     reply.status(status).send({
       ok: false,
       error: {
-        code: (err as { code?: string }).code ?? (isPermissionDenied ? 'FORBIDDEN' : 'INTERNAL'),
-        message: err.message ?? 'Internal error'
+        code: e.code ?? (isPermissionDenied ? 'FORBIDDEN' : 'INTERNAL'),
+        message: e.message ?? 'Internal error'
       }
     });
   });

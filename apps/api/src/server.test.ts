@@ -311,4 +311,135 @@ describe('LegacyOps API — smoke tests', () => {
     expect(Array.isArray(body.links)).toBe(true);
     expect(body.links.length).toBeGreaterThan(0);
   });
+
+  // ---------- RBAC edge cases ----------
+  it('missing role header defaults to operator and can read customers', async () => {
+    const res = await app.inject({ method: 'GET', url: '/customers?pageSize=1' });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('missing role header cannot access admin-only migration endpoints', async () => {
+    const res = await app.inject({ method: 'GET', url: '/migration/source-of-truth' });
+    expect(res.statusCode).toBe(403);
+    const body = res.json();
+    expect(body.error.code).toBe('FORBIDDEN');
+  });
+
+  it('unknown role falls back to default operator (no privilege escalation)', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/migration/source-of-truth',
+      headers: { 'x-legacyops-role': 'super_root_admin' }
+    });
+    expect(res.statusCode).toBe(403);
+    const body = res.json();
+    expect(body.error.code).toBe('FORBIDDEN');
+  });
+
+  it('invalid role cannot access admin endpoints even with weird casing', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/migration/source-of-truth',
+      headers: { 'x-legacyops-role': 'ADMIN' }
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('legacy observability endpoints require integration:configure for operator', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/legacy/health',
+      headers: OPERATOR_HEADER
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('legacy observability endpoints accessible to admin', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/legacy/health',
+      headers: ADMIN_HEADER
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  // ---------- Audit log permission-denied event ----------
+  it('permission-denied request records an audit event', async () => {
+    // Trigger a denial on a known endpoint with a known permission
+    await app.inject({
+      method: 'GET',
+      url: '/migration/source-of-truth',
+      headers: OPERATOR_HEADER
+    });
+    // Read audit events as auditor
+    const auditRes = await app.inject({
+      method: 'GET',
+      url: '/audit-events?type=permission.denied',
+      headers: { 'x-legacyops-role': 'auditor' }
+    });
+    expect(auditRes.statusCode).toBe(200);
+    const body = auditRes.json();
+    expect(body.total).toBeGreaterThan(0);
+    // Find the most recent permission.denied event for this specific resource
+    const events = body.items.filter(
+      (e: { type: string; metadata: { permission: string; resource?: string } }) =>
+        e.type === 'permission.denied' &&
+        e.metadata?.permission === 'integration:configure' &&
+        typeof e.metadata?.resource === 'string' &&
+        e.metadata.resource.includes('/migration/source-of-truth')
+    );
+    expect(events.length).toBeGreaterThan(0);
+    const event = events[events.length - 1];
+    expect(event.metadata.permission).toBe('integration:configure');
+    expect(event.metadata.resource).toMatch(/migration\/source-of-truth/);
+  });
+
+  // ---------- Error envelope consistency ----------
+  it('403 responses follow the { ok: false, error: { code, message } } envelope', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/migration/source-of-truth',
+      headers: OPERATOR_HEADER
+    });
+    expect(res.statusCode).toBe(403);
+    const body = res.json();
+    expect(body).toEqual({
+      ok: false,
+      error: {
+        code: 'FORBIDDEN',
+        message: expect.stringMatching(/integration:configure/)
+      }
+    });
+  });
+
+  it('404 responses follow the { ok: false, error: { code, message } } envelope', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/customers/does_not_exist',
+      headers: ADMIN_HEADER
+    });
+    expect(res.statusCode).toBe(404);
+    const body = res.json();
+    expect(body).toEqual({
+      ok: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: expect.stringMatching(/Customer/)
+      }
+    });
+  });
+
+  it('400 responses follow the { ok: false, error: { code, message } } envelope', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/cases',
+      headers: { ...ADMIN_HEADER, 'content-type': 'application/json' },
+      payload: JSON.stringify({}) // missing required fields
+    });
+    expect(res.statusCode).toBe(400);
+    const body = res.json();
+    expect(body.ok).toBe(false);
+    expect(body.error.code).toBe('BAD_REQUEST');
+    expect(body.error.message).toMatch(/customerId/i);
+  });
 });
