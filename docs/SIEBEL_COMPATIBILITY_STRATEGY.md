@@ -75,6 +75,28 @@ SIEBEL_TIMEOUT_MS=8000
 No vendor URL, no vendor credential, no proprietary endpoint is hardcoded
 in any package.
 
+### Real adapter vs Fake Lab
+
+LegacyOps ships TWO `SiebelBridge` implementations:
+
+1. **`FakeSiebelAdapter`** (`packages/siebel-bridge/src/mock/`) — the
+   in-memory Fake Siebel Lab. Default mode for demos, training, smoke
+   tests and integration tests. No real network.
+2. **`RealSiebelAdapter`** (`packages/siebel-bridge/src/real/`) — a
+   production-shaped REST adapter foundation that implements the full
+   `SiebelBridge` contract against a configurable Siebel-like REST
+   endpoint. Tested against mock `fetch`; validation against a real
+   Siebel sandbox is still pending (issue #4).
+
+The API selects which adapter to use via the `LEGACYOPS_SIEBEL_ADAPTER`
+env var (`fake` by default). If `real` is requested but the config is
+invalid, the factory falls back to `fake` and records the reason — the
+API never crashes.
+
+See `docs/REAL_SIEBEL_ADAPTER.md` for the full specification and
+`docs/SIEBEL_SANDBOX_ONBOARDING.md` for what a customer must provide
+before the real adapter can be validated against their sandbox.
+
 ---
 
 ## 5. Three operating postures

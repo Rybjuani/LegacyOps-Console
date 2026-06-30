@@ -34,6 +34,13 @@ Pilot rules:
 - Connect LegacyOps to a **sandbox** Siebel-like environment through the
   bridge contract.
 - Mode: `read_only_overlay`.
+- Switch the adapter from `fake` to `real` by setting
+  `LEGACYOPS_SIEBEL_ADAPTER=real` plus a valid `RealSiebelConfig` (see
+  `docs/REAL_SIEBEL_ADAPTER.md` and `docs/SIEBEL_SANDBOX_ONBOARDING.md`).
+- Confirm the endpoint map matches the sandbox's actual REST paths
+  (the defaults are CONCEPTUAL — each customer must review and override).
+- Verify `GET /siebel/adapter/status` returns `mode: real`,
+  `realConfigured: true`.
 - Operators see real legacy data through LegacyOps UI.
 - No writes go to the legacy system from LegacyOps.
 - Audit every customer view.
