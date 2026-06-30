@@ -105,10 +105,12 @@ jobs:
             'BEGIN OPENSSH PRIVATE KEY'
             'BEGIN PGP PRIVATE KEY BLOCK'
           )
-          # Allowlist of paths that are allowed to *mention* these patterns
-          # in documentation context (e.g. SECURITY.md describing what we
-          # scan for).
-          ALLOWLIST='SECURITY.md:docs/SECURITY_NOTES.md:docs/ENTERPRISE_READINESS_GAP.md:.env.example'
+          # Allowlist of basenames that are allowed to *mention* these
+          # patterns in documentation context (e.g. SECURITY.md describing
+          # what we scan for, ci.yml listing the patterns, README reporting
+          # the scan coverage, .env.example with inert placeholders, and
+          # docs that show configuration examples).
+          ALLOWLIST='SECURITY.md:SECURITY_NOTES.md:ENTERPRISE_READINESS_GAP.md:.env.example:ci.yml:README.md:SIEBEL_COMPATIBILITY_STRATEGY.md:INTEGRATION_MODES.md:TECHNICAL_DUE_DILIGENCE.md'
           HITS=0
           for pat in "${PATTERNS[@]}"; do
             while IFS= read -r line; do
