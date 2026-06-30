@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { SectionHeader } from '../components/ui';
 
 interface Roi {
   assumptions: {
@@ -36,11 +37,10 @@ export function RoiPage() {
 
   return (
     <div>
-      <h1 className="page-title">ROI Metrics</h1>
-      <p className="page-subtitle">
-        Synthetic before/after comparison. The same template is shipped to pilots so prospects can plug in their own
-        numbers.
-      </p>
+      <SectionHeader
+        title="ROI Metrics"
+        subtitle="Synthetic before/after comparison. The same template is shipped to pilots so prospects can plug in their own numbers."
+      />
 
       <div className="grid grid-4 mb">
         <div className="panel kpi">

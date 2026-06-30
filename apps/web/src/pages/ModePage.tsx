@@ -1,11 +1,13 @@
+import { SectionHeader, TechnicalBanner } from '../components/ui';
+
 export function ModePage() {
   return (
     <div>
-      <h1 className="page-title">Integration Modes</h1>
-      <p className="page-subtitle">
-        LegacyOps can run in seven integration modes — from pure standalone CRM to full progressive replacement. See{' '}
-        <code>docs/INTEGRATION_MODES.md</code>.
-      </p>
+      <SectionHeader
+        title="Integration Modes"
+        subtitle="LegacyOps can run in seven integration modes — from pure standalone CRM to full progressive replacement."
+      />
+      <TechnicalBanner>These tools are for developers, architects and migration teams.</TechnicalBanner>
 
       <div className="grid grid-2">
         <div className="panel">

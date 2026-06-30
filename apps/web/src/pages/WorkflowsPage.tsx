@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { WorkflowDefinition, WorkflowRun } from '@legacyops/domain';
+import { SectionHeader } from '../components/ui';
 
 export function WorkflowsPage() {
   const [workflows, setWorkflows] = useState<WorkflowDefinition[]>([]);
@@ -28,10 +29,10 @@ export function WorkflowsPage() {
 
   return (
     <div>
-      <h1 className="page-title">Workflow Engine</h1>
-      <p className="page-subtitle">
-        Guided operator workflows. Each step declares its required fields and is fully audited.
-      </p>
+      <SectionHeader
+        title="Workflows"
+        subtitle="Guided operator workflows. Each step declares its required fields and is fully audited."
+      />
 
       <div className="grid grid-2 mb">
         <div className="panel">

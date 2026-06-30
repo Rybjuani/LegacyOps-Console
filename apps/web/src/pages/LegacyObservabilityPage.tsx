@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { SectionHeader, TechnicalBanner } from '../components/ui';
 
 interface Health {
   system: string;
@@ -27,10 +28,11 @@ export function LegacyObservabilityPage() {
 
   return (
     <div>
-      <h1 className="page-title">Legacy Observability</h1>
-      <p className="page-subtitle">
-        Health, latency and errors of the legacy/adapter layer. Strictly separated from CRM operational metrics.
-      </p>
+      <SectionHeader
+        title="Legacy Observability"
+        subtitle="Health, latency and errors of the legacy/adapter layer. Strictly separated from CRM operational metrics."
+      />
+      <TechnicalBanner>These tools are for developers, architects and migration teams.</TechnicalBanner>
 
       <div className="grid grid-2 mb">
         <div className="panel">

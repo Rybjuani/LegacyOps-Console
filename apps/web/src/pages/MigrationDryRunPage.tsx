@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { SectionHeader, TechnicalBanner } from '../components/ui';
 
 interface DryRun {
   planId: string;
@@ -65,11 +66,11 @@ export function MigrationDryRunPage() {
 
   return (
     <div>
-      <h1 className="page-title">Migration Dry Run</h1>
-      <p className="page-subtitle">
-        Plan, validate, detect conflicts and reconcile — before any data is moved. Every migration is auditable and
-        reversible.
-      </p>
+      <SectionHeader
+        title="Migration Dry Run"
+        subtitle="Plan, validate, detect conflicts and reconcile — before any data is moved. Every migration is auditable and reversible."
+      />
+      <TechnicalBanner>These tools are for developers, architects and migration teams.</TechnicalBanner>
 
       {plan && (
         <div className="panel mb">

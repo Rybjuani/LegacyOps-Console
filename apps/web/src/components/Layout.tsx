@@ -2,29 +2,29 @@ import { NavLink, Outlet } from 'react-router-dom';
 
 const nav = [
   {
-    group: 'Operations',
+    group: 'Daily Operations',
     items: [
-      { to: '/dashboard', label: 'Dashboard' },
+      { to: '/dashboard', label: 'Home' },
       { to: '/interaction-console', label: 'Interaction Console' },
       { to: '/customers', label: 'Customer Search' },
       { to: '/cases', label: 'Cases' },
-      { to: '/workflows', label: 'Workflows' },
-      { to: '/supervisor', label: 'Supervisor' }
+      { to: '/workflows', label: 'Workflows' }
     ]
   },
   {
-    group: 'Legacy / Siebel',
+    group: 'Supervision',
+    items: [
+      { to: '/supervisor', label: 'Supervisor' },
+      { to: '/roi', label: 'ROI Metrics' }
+    ]
+  },
+  {
+    group: 'Technical / Legacy',
     items: [
       { to: '/siebel-bridge', label: 'Siebel Bridge Lab' },
       { to: '/legacy-observability', label: 'Legacy Observability' },
       { to: '/migration', label: 'Migration Dry Run' },
-      { to: '/source-of-truth', label: 'Source of Truth' }
-    ]
-  },
-  {
-    group: 'Business',
-    items: [
-      { to: '/roi', label: 'ROI Metrics' },
+      { to: '/source-of-truth', label: 'Source of Truth' },
       { to: '/mode', label: 'Integration Mode' }
     ]
   }
@@ -35,11 +35,11 @@ export function Layout() {
     <div className="app-shell">
       <div className="topbar">
         <span className="brand">LegacyOps Console</span>
-        <span className="mode-badge">CRM core + Siebel-like bridge</span>
-        <span style={{ flex: 1 }} />
+        <span className="mode-badge">Synthetic demo</span>
         <span className="muted" style={{ fontSize: 12 }}>
-          Synthetic mode · v0.1
+          Operator-friendly CRM modernization lab
         </span>
+        <span style={{ flex: 1 }} />
       </div>
       <aside className="sidebar">
         {nav.map((g) => (

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import type { Customer } from '@legacyops/domain';
+import { EmptyState, LoadingState, SectionHeader } from '../components/ui';
 
 export function CustomerSearchPage() {
   const [q, setQ] = useState('');
@@ -23,8 +24,7 @@ export function CustomerSearchPage() {
 
   return (
     <div>
-      <h1 className="page-title">Customer Search</h1>
-      <p className="page-subtitle">Search across residential, business and VIP customers.</p>
+      <SectionHeader title="Customer Search" subtitle="Search across residential, business and VIP customers." />
 
       <div className="panel mb">
         <div className="row">
@@ -51,47 +51,53 @@ export function CustomerSearchPage() {
         </div>
       </div>
 
-      <div className="panel">
-        <h3>Results ({items.length})</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Segment</th>
-              <th>Document</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Risk</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((c) => (
-              <tr key={c.id}>
-                <td>{c.displayName}</td>
-                <td>
-                  <span className="pill accent">{c.segment}</span>
-                </td>
-                <td className="muted">{c.documentNumber ?? '—'}</td>
-                <td className="muted">{c.email ?? '—'}</td>
-                <td className="muted">{c.phone ?? '—'}</td>
-                <td>
-                  {c.riskFlags.map((f) => (
-                    <span key={f} className="pill warn" style={{ marginRight: 4 }}>
-                      {f}
-                    </span>
-                  ))}
-                </td>
-                <td>
-                  <button className="btn secondary" onClick={() => navigate(`/customers/${c.id}`)}>
-                    Open 360
-                  </button>
-                </td>
+      {loading ? (
+        <LoadingState label="Searching…" />
+      ) : items.length === 0 ? (
+        <EmptyState message="No customers found. Try adjusting your search." />
+      ) : (
+        <div className="panel">
+          <h3>Results ({items.length})</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Segment</th>
+                <th>Document</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Risk</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {items.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.displayName}</td>
+                  <td>
+                    <span className="pill accent">{c.segment}</span>
+                  </td>
+                  <td className="muted">{c.documentNumber ?? '—'}</td>
+                  <td className="muted">{c.email ?? '—'}</td>
+                  <td className="muted">{c.phone ?? '—'}</td>
+                  <td>
+                    {c.riskFlags.map((f) => (
+                      <span key={f} className="pill warn" style={{ marginRight: 4 }}>
+                        {f.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                  </td>
+                  <td>
+                    <button className="btn secondary" onClick={() => navigate(`/customers/${c.id}`)}>
+                      Open 360
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { SectionHeader, TechnicalBanner } from '../components/ui';
 
 interface Meta {
   businessObjects: { name: string; components: string[] }[];
@@ -45,11 +46,11 @@ export function SiebelBridgeLabPage() {
 
   return (
     <div>
-      <h1 className="page-title">Siebel Bridge Lab</h1>
-      <p className="page-subtitle">
-        Synthetic Siebel-like backend — Business Objects, Integration Objects, Business Services, sessions and error
-        simulation. All data is fictional. No proprietary schema is reproduced.
-      </p>
+      <SectionHeader
+        title="Siebel Bridge Lab"
+        subtitle="Synthetic Siebel-like backend — Business Objects, Integration Objects, Business Services, sessions and error simulation. All data is fictional."
+      />
+      <TechnicalBanner>These tools are for developers, architects and migration teams.</TechnicalBanner>
 
       <div className="banner accent">
         Anti-corruption layer in action: the LegacyOps domain talks to the bridge through the adapter contracts defined

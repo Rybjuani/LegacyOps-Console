@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { Case } from '@legacyops/domain';
+import { EmptyState, SectionHeader } from '../components/ui';
 
 export function CasesPage() {
   const [cases, setCases] = useState<Case[]>([]);
@@ -20,10 +21,10 @@ export function CasesPage() {
 
   return (
     <div>
-      <h1 className="page-title">Cases</h1>
-      <p className="page-subtitle">
-        Native case management. Cases can be linked to legacy Service Requests through the bridge.
-      </p>
+      <SectionHeader
+        title="Cases"
+        subtitle="Native case management. Cases can be linked to legacy Service Requests through the bridge."
+      />
 
       <div className="panel mb">
         <div className="row">
@@ -62,40 +63,46 @@ export function CasesPage() {
         </div>
       </div>
 
-      <div className="panel">
-        <table>
-          <thead>
-            <tr>
-              <th>Case</th>
-              <th>Customer</th>
-              <th>Status</th>
-              <th>Priority</th>
-              <th>Category</th>
-              <th>SLA due</th>
-              <th>External ID</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cases.map((c) => (
-              <tr key={c.id}>
-                <td>{c.subject}</td>
-                <td className="muted">{c.customerId}</td>
-                <td>
-                  <span className="pill">{c.status}</span>
-                </td>
-                <td>
-                  <span className={`pill ${c.priority === 'urgent' ? 'danger' : c.priority === 'high' ? 'warn' : ''}`}>
-                    {c.priority}
-                  </span>
-                </td>
-                <td className="muted">{c.category}</td>
-                <td className="muted">{c.slaDueAt?.slice(0, 16).replace('T', ' ') ?? '—'}</td>
-                <td className="muted">{c.externalId ?? '—'}</td>
+      {cases.length === 0 ? (
+        <EmptyState message="No cases match the current filters." />
+      ) : (
+        <div className="panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Case</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Category</th>
+                <th>SLA due</th>
+                <th>External ID</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {cases.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.subject}</td>
+                  <td className="muted">{c.customerId}</td>
+                  <td>
+                    <span className="pill">{c.status}</span>
+                  </td>
+                  <td>
+                    <span
+                      className={`pill ${c.priority === 'urgent' ? 'danger' : c.priority === 'high' ? 'warn' : ''}`}
+                    >
+                      {c.priority}
+                    </span>
+                  </td>
+                  <td className="muted">{c.category}</td>
+                  <td className="muted">{c.slaDueAt?.slice(0, 16).replace('T', ' ') ?? '—'}</td>
+                  <td className="muted">{c.externalId ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

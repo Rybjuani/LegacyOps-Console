@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { ErrorState, LoadingState, SectionHeader, SuccessBanner } from '../components/ui';
 
 interface DashboardData {
   customers: { total: number; items: unknown[] };
@@ -7,6 +9,7 @@ interface DashboardData {
   health: { status: string };
   workflows: { items: unknown[] };
   audit: { total: number };
+  adapterStatus?: { mode: string; realConfigured: boolean; warning?: string };
 }
 
 export function DashboardPage() {
@@ -19,21 +22,30 @@ export function DashboardPage() {
       api.get<{ items: unknown[] }>('/cases'),
       api.get<{ status: string }>('/health'),
       api.get<{ items: unknown[] }>('/workflows'),
-      api.get<{ total: number }>('/audit-events?pageSize=1')
+      api.get<{ total: number }>('/audit-events?pageSize=1'),
+      api.get<{ mode: string; realConfigured: boolean; warning?: string }>('/siebel/adapter/status').catch(() => null)
     ])
-      .then(([customers, cases, health, workflows, audit]) => {
-        setData({ customers, cases, health, workflows, audit: { total: audit.total } });
+      .then(([customers, cases, health, workflows, audit, adapterStatus]) => {
+        setData({
+          customers,
+          cases,
+          health,
+          workflows,
+          audit: { total: audit.total },
+          adapterStatus: adapterStatus ?? undefined
+        });
       })
       .catch((e) => setErr(String(e)));
   }, []);
 
-  if (err) return <div className="banner warn">Failed to load: {err}</div>;
-  if (!data) return <div className="muted">Loading…</div>;
+  if (err) return <ErrorState message={`Failed to load: ${err}`} />;
+  if (!data) return <LoadingState />;
+
+  const openCases = data.cases.items.length;
 
   return (
     <div>
-      <h1 className="page-title">Operational Dashboard</h1>
-      <p className="page-subtitle">High-level snapshot of the LegacyOps CRM core and the Siebel-like bridge.</p>
+      <SectionHeader title="Today's Operations" subtitle="A quick snapshot of what is happening right now." />
 
       <div className="grid grid-4 mb">
         <div className="panel kpi">
@@ -42,7 +54,7 @@ export function DashboardPage() {
         </div>
         <div className="panel kpi">
           <span className="label">Open cases</span>
-          <span className="value">{data.cases.items.length}</span>
+          <span className="value">{openCases}</span>
         </div>
         <div className="panel kpi">
           <span className="label">Workflows</span>
@@ -54,28 +66,39 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-2">
+      <div className="grid grid-2 mb">
         <div className="panel">
-          <h3>Bridge health</h3>
-          <p className="muted">
-            Status: <span className="pill ok">{data.health.status}</span>
-          </p>
-          <p className="muted">
-            The Siebel-like bridge is running in synthetic mode. All endpoints serve fictional data from the in-memory
-            Fake Siebel Lab.
-          </p>
+          <h3>Operator flow</h3>
+          <p className="muted">Guide an operator from customer verification to case closure.</p>
+          <Link to="/interaction-console" className="btn" style={{ display: 'inline-block', marginTop: 12 }}>
+            Open Interaction Console
+          </Link>
         </div>
         <div className="panel">
-          <h3>What makes LegacyOps different</h3>
-          <ul className="list-clean">
-            <li>Own CRM domain — Customer, Account, Case, Workflow, Audit.</li>
-            <li>Anti-corruption layer keeps the domain free of Siebel coupling.</li>
-            <li>Migration engine with dry-runs, conflicts, reconciliation, rollback.</li>
-            <li>Legacy observability separated from operational metrics.</li>
-            <li>ROI metrics baked in — measure savings before/after pilot.</li>
-          </ul>
+          <h3>Legacy readiness</h3>
+          <p className="muted">
+            Bridge status: <span className="pill ok">{data.health.status}</span>
+          </p>
+          {data.adapterStatus && (
+            <p className="muted">
+              Mode:{' '}
+              <span className="pill accent">{data.adapterStatus.realConfigured ? 'Real adapter' : 'Fake Lab'}</span>
+            </p>
+          )}
+          <p className="muted" style={{ marginTop: 8, fontSize: 12 }}>
+            The bridge talks to a synthetic Siebel-like backend by default. Real adapter validation is pending.
+          </p>
         </div>
       </div>
+
+      <SuccessBanner>
+        <strong>Why this matters</strong>
+        <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+          <li>Reduce operator screen switching.</li>
+          <li>Wrap legacy CRM without replacing it immediately.</li>
+          <li>Measure migration ROI before a risky rewrite.</li>
+        </ul>
+      </SuccessBanner>
     </div>
   );
 }

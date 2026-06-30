@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { SectionHeader, TechnicalBanner } from '../components/ui';
 
 interface SoT {
   sourceSystems: { id: string; displayName: string; kind: string; description: string }[];
@@ -25,11 +26,11 @@ export function SourceOfTruthPage() {
 
   return (
     <div>
-      <h1 className="page-title">Source of Truth Map</h1>
-      <p className="page-subtitle">
-        For each module or field, who owns the truth right now? The registry drives the anti-corruption layer and the
-        migration engine.
-      </p>
+      <SectionHeader
+        title="Source of Truth Map"
+        subtitle="For each module or field, who owns the truth right now? The registry drives the anti-corruption layer and the migration engine."
+      />
+      <TechnicalBanner>These tools are for developers, architects and migration teams.</TechnicalBanner>
 
       <div className="grid grid-3 mb">
         {sot.sourceSystems.map((s) => (

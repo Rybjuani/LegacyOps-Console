@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import type { Case, Customer, Interaction, WorkflowDefinition } from '@legacyops/domain';
+import { ErrorState, LoadingState, SectionHeader, SuccessBanner } from '../components/ui';
 
 type Step =
   | 'select_customer'
@@ -11,6 +12,16 @@ type Step =
   | 'create_case'
   | 'add_note'
   | 'close_interaction';
+
+const STEP_LABELS: [Step, string, string][] = [
+  ['select_customer', 'Select customer', 'Pick the customer you are talking to.'],
+  ['verify_identity', 'Verify identity', 'Confirm the customer identity before proceeding.'],
+  ['choose_reason', 'Choose reason', 'Why is the customer contacting us?'],
+  ['run_workflow', 'Recommended workflow', 'Launch the guided workflow that fits this reason.'],
+  ['create_case', 'Create case', 'Open a case to track this interaction.'],
+  ['add_note', 'Add note', 'Leave an optional note for the case.'],
+  ['close_interaction', 'Close', 'Close the interaction and record the outcome.']
+];
 
 const REASONS = [
   'billing_claim',
@@ -36,13 +47,21 @@ export function InteractionConsolePage() {
   const [note, setNote] = useState('');
   const [outcome, setOutcome] = useState('resolved');
   const [auditSummary, setAuditSummary] = useState<string[]>([]);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     api.get<{ items: Customer[] }>('/customers?pageSize=50').then((r) => setCustomers(r.items));
     api.get<{ items: WorkflowDefinition[] }>('/workflows').then((r) => setWorkflows(r.items));
   }, []);
 
+  function flash(msg: string) {
+    setSuccess(msg);
+    setTimeout(() => setSuccess(null), 3000);
+  }
+
   function startInteraction() {
+    setErr(null);
     api
       .post<{ ok: true; data: Interaction }>('/interactions', {
         customerId,
@@ -57,12 +76,15 @@ export function InteractionConsolePage() {
           ...s,
           `Interaction ${r.data.id} started for customer ${customerId} (${channel}, ${reason})`
         ]);
+        flash('Interaction started.');
         setStep('verify_identity');
-      });
+      })
+      .catch((e) => setErr(String(e)));
   }
 
   function startWorkflow() {
     if (!selectedWorkflow) return;
+    setErr(null);
     api
       .post<{ ok: true; data: { id: string } }>(`/workflows/${selectedWorkflow}/start`, {
         customerId,
@@ -70,11 +92,14 @@ export function InteractionConsolePage() {
       })
       .then((r) => {
         setAuditSummary((s) => [...s, `Workflow ${selectedWorkflow} started (run ${r.data.id})`]);
+        flash('Workflow started.');
         setStep('create_case');
-      });
+      })
+      .catch((e) => setErr(String(e)));
   }
 
   function createCase() {
+    setErr(null);
     api
       .post<{ ok: true; data: Case }>('/cases', {
         customerId,
@@ -86,8 +111,10 @@ export function InteractionConsolePage() {
       .then((r) => {
         setCaseId(r.data.id);
         setAuditSummary((s) => [...s, `Case ${r.data.id} created (${reason})`]);
+        flash('Case created.');
         setStep('add_note');
-      });
+      })
+      .catch((e) => setErr(String(e)));
   }
 
   function addNote() {
@@ -95,6 +122,7 @@ export function InteractionConsolePage() {
       setStep('close_interaction');
       return;
     }
+    setErr(null);
     api
       .post<{ ok: true }>(`/cases/${caseId}/comments`, {
         body: note,
@@ -102,24 +130,15 @@ export function InteractionConsolePage() {
       })
       .then(() => {
         setAuditSummary((s) => [...s, `Note added to case ${caseId}`]);
+        flash('Note saved.');
         setStep('close_interaction');
-      });
+      })
+      .catch((e) => setErr(String(e)));
   }
 
   function closeInteraction() {
-    api
-      .post<{ ok: true }>('/interactions', {
-        customerId,
-        channel,
-        reason,
-        summary: `Closed. Outcome: ${outcome}`,
-        agentId: 'usr_operator1'
-      })
-      .then(() => {
-        setAuditSummary((s) => [...s, `Interaction closed with outcome "${outcome}"`]);
-        setStep('close_interaction');
-      });
-    // Mark as done in UI even if second interaction is created.
+    setAuditSummary((s) => [...s, `Interaction closed with outcome "${outcome}"`]);
+    flash('Interaction closed.');
     setStep('close_interaction');
   }
 
@@ -131,205 +150,262 @@ export function InteractionConsolePage() {
     setNote('');
     setIdentityVerified(false);
     setAuditSummary([]);
+    setSuccess(null);
+    setErr(null);
   }
+
+  if (customers.length === 0) return <LoadingState />;
 
   return (
     <div>
-      <h1 className="page-title">Interaction Console</h1>
-      <p className="page-subtitle">
-        Guided operator flow: select customer → verify identity → choose reason → run workflow → create case → add note
-        → close.
-      </p>
+      <SectionHeader
+        title="Guided Interaction"
+        subtitle="Follow the steps to verify the customer, run the right workflow and create an auditable case."
+      />
 
-      <div className="banner accent">
-        Demo mode: the console consumes the synthetic API. The role is sent as <code>x-legacyops-role: admin</code> by
-        the web client.
-      </div>
+      {success && <SuccessBanner>{success}</SuccessBanner>}
+      {err && <ErrorState message={err} />}
 
       <div className="panel mb">
-        <h3>Stepper</h3>
+        <h3>Steps</h3>
         <div className="stepper">
-          {(
-            [
-              ['select_customer', 'Select customer'],
-              ['verify_identity', 'Verify identity'],
-              ['choose_reason', 'Choose reason'],
-              ['run_workflow', 'Run workflow'],
-              ['create_case', 'Create case'],
-              ['add_note', 'Add note'],
-              ['close_interaction', 'Close interaction']
-            ] as [Step, string][]
-          ).map(([s, label]) => (
-            <div
-              key={s}
-              className={`step ${step === s ? 'active' : auditSummary.some((a) => a.toLowerCase().includes(label.toLowerCase().split(' ')[0])) ? 'completed' : ''}`}
-            >
-              <div className="step-id">{s}</div>
-              <div className="step-label">{label}</div>
-            </div>
-          ))}
+          {STEP_LABELS.map(([s, label, help]) => {
+            const isDone = auditSummary.some((a) => a.toLowerCase().includes(label.toLowerCase().split(' ')[0]));
+            return (
+              <div key={s} className={`step ${step === s ? 'active' : isDone ? 'completed' : ''}`}>
+                <div className="step-id">{s}</div>
+                <div className="step-label">{label}</div>
+                <div className="muted" style={{ fontSize: 11 }}>
+                  {help}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {step === 'select_customer' && (
-        <div className="panel mb">
-          <h3>1. Select customer</h3>
-          <div className="col">
-            <label className="muted">Customer</label>
-            <select className="select" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-              <option value="">— pick a customer —</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.displayName} ({c.segment})
-                </option>
-              ))}
-            </select>
-            <label className="muted">Channel</label>
-            <select
-              className="select"
-              value={channel}
-              onChange={(e) => setChannel(e.target.value as Interaction['channel'])}
-            >
-              {CHANNELS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <button className="btn" disabled={!customerId} onClick={startInteraction}>
-              Start interaction
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="grid grid-2">
+        <div>
+          {step === 'select_customer' && (
+            <div className="panel mb">
+              <h3>1. Select customer</h3>
+              <div className="col">
+                <label className="muted">Customer</label>
+                <select className="select" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+                  <option value="">— pick a customer —</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.displayName} ({c.segment})
+                    </option>
+                  ))}
+                </select>
+                <label className="muted">Channel</label>
+                <select
+                  className="select"
+                  value={channel}
+                  onChange={(e) => setChannel(e.target.value as Interaction['channel'])}
+                >
+                  {CHANNELS.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <button className="btn" disabled={!customerId} onClick={startInteraction}>
+                  Start interaction
+                </button>
+              </div>
+            </div>
+          )}
 
-      {step === 'verify_identity' && (
-        <div className="panel mb">
-          <h3>2. Verify identity</h3>
-          <p className="muted">
-            Ask the customer for their document number or DOB. Tick the checkbox to confirm identity before proceeding.
-          </p>
-          <label className="row" style={{ gap: 8 }}>
-            <input type="checkbox" checked={identityVerified} onChange={(e) => setIdentityVerified(e.target.checked)} />
-            <span>Identity verified</span>
-          </label>
-          <button className="btn" disabled={!identityVerified} onClick={() => setStep('choose_reason')}>
-            Continue
-          </button>
-        </div>
-      )}
-
-      {step === 'choose_reason' && (
-        <div className="panel mb">
-          <h3>3. Choose reason</h3>
-          <div className="col">
-            <label className="muted">Reason</label>
-            <select className="select" value={reason} onChange={(e) => setReason(e.target.value)}>
-              {REASONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-            <button className="btn" onClick={() => setStep('run_workflow')}>
-              Continue
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === 'run_workflow' && (
-        <div className="panel mb">
-          <h3>4. Run workflow</h3>
-          <div className="col">
-            <label className="muted">Workflow</label>
-            <select className="select" value={selectedWorkflow} onChange={(e) => setSelectedWorkflow(e.target.value)}>
-              <option value="">— pick a workflow —</option>
-              {workflows.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
-            <button className="btn" disabled={!selectedWorkflow} onClick={startWorkflow}>
-              Start workflow
-            </button>
-            <button className="btn secondary" onClick={() => setStep('create_case')}>
-              Skip workflow
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === 'create_case' && (
-        <div className="panel mb">
-          <h3>5. Create case</h3>
-          <p className="muted">
-            A new case will be created for customer <strong>{customerId}</strong> with reason <strong>{reason}</strong>.
-          </p>
-          <button className="btn" onClick={createCase}>
-            Create case
-          </button>
-        </div>
-      )}
-
-      {step === 'add_note' && (
-        <div className="panel mb">
-          <h3>6. Add note</h3>
-          <textarea
-            className="textarea"
-            rows={4}
-            placeholder="Optional. Will be added as a comment to the case."
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-          <button className="btn mt" onClick={addNote}>
-            Save note & continue
-          </button>
-        </div>
-      )}
-
-      {step === 'close_interaction' && (
-        <div className="panel mb">
-          <h3>7. Close interaction</h3>
-          <div className="col">
-            <label className="muted">Outcome</label>
-            <select className="select" value={outcome} onChange={(e) => setOutcome(e.target.value)}>
-              <option value="resolved">Resolved</option>
-              <option value="escalated">Escalated</option>
-              <option value="follow_up">Follow-up required</option>
-              <option value="unresolved">Unresolved</option>
-            </select>
-            <button className="btn" onClick={closeInteraction}>
-              Close interaction
-            </button>
-            <button className="btn secondary" onClick={reset}>
-              Start new interaction
-            </button>
-            {caseId && (
-              <button className="btn secondary" onClick={() => navigate(`/customers/${customerId}`)}>
-                View customer 360
+          {step === 'verify_identity' && (
+            <div className="panel mb">
+              <h3>2. Verify identity</h3>
+              <p className="muted">
+                Ask the customer for their document number or date of birth. Tick the box once confirmed.
+              </p>
+              <label className="row" style={{ gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={identityVerified}
+                  onChange={(e) => setIdentityVerified(e.target.checked)}
+                />
+                <span>Identity verified</span>
+              </label>
+              <button
+                className="btn"
+                disabled={!identityVerified}
+                onClick={() => setStep('choose_reason')}
+                style={{ marginTop: 8 }}
+              >
+                Continue
               </button>
+            </div>
+          )}
+
+          {step === 'choose_reason' && (
+            <div className="panel mb">
+              <h3>3. Choose reason</h3>
+              <div className="col">
+                <label className="muted">Reason</label>
+                <select className="select" value={reason} onChange={(e) => setReason(e.target.value)}>
+                  {REASONS.map((r) => (
+                    <option key={r} value={r}>
+                      {r.replace(/_/g, ' ')}
+                    </option>
+                  ))}
+                </select>
+                <button className="btn" onClick={() => setStep('run_workflow')}>
+                  Continue
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 'run_workflow' && (
+            <div className="panel mb">
+              <h3>4. Recommended workflow</h3>
+              <div className="col">
+                <label className="muted">Workflow</label>
+                <select
+                  className="select"
+                  value={selectedWorkflow}
+                  onChange={(e) => setSelectedWorkflow(e.target.value)}
+                >
+                  <option value="">— pick a workflow —</option>
+                  {workflows.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
+                </select>
+                <button className="btn" disabled={!selectedWorkflow} onClick={startWorkflow}>
+                  Start workflow
+                </button>
+                <button className="btn secondary" onClick={() => setStep('create_case')}>
+                  Skip workflow
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 'create_case' && (
+            <div className="panel mb">
+              <h3>5. Create case</h3>
+              <p className="muted">
+                A case will be created for customer <strong>{customerId}</strong> with reason <strong>{reason}</strong>.
+              </p>
+              <button className="btn" onClick={createCase}>
+                Create case
+              </button>
+            </div>
+          )}
+
+          {step === 'add_note' && (
+            <div className="panel mb">
+              <h3>6. Add note</h3>
+              <textarea
+                className="textarea"
+                rows={4}
+                placeholder="Optional. Will be added as a comment to the case."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <button className="btn mt" onClick={addNote}>
+                Save note & continue
+              </button>
+            </div>
+          )}
+
+          {step === 'close_interaction' && (
+            <div className="panel mb">
+              <h3>7. Close</h3>
+              <div className="col">
+                <label className="muted">Outcome</label>
+                <select className="select" value={outcome} onChange={(e) => setOutcome(e.target.value)}>
+                  <option value="resolved">Resolved</option>
+                  <option value="escalated">Escalated</option>
+                  <option value="follow_up">Follow-up required</option>
+                  <option value="unresolved">Unresolved</option>
+                </select>
+                <button className="btn" onClick={closeInteraction}>
+                  Close interaction
+                </button>
+                <button className="btn secondary" onClick={reset}>
+                  Start new interaction
+                </button>
+                {caseId && (
+                  <button className="btn secondary" onClick={() => navigate(`/customers/${customerId}`)}>
+                    View customer 360
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div className="panel mb">
+            <h3>Summary</h3>
+            <table>
+              <tbody>
+                <tr>
+                  <th>Customer</th>
+                  <td className="muted">{customerId || '—'}</td>
+                </tr>
+                <tr>
+                  <th>Channel</th>
+                  <td className="muted">{channel}</td>
+                </tr>
+                <tr>
+                  <th>Reason</th>
+                  <td className="muted">{reason}</td>
+                </tr>
+                <tr>
+                  <th>Workflow</th>
+                  <td className="muted">{selectedWorkflow || '—'}</td>
+                </tr>
+                <tr>
+                  <th>Case ID</th>
+                  <td className="muted">{caseId || '—'}</td>
+                </tr>
+                <tr>
+                  <th>Status</th>
+                  <td>
+                    <span className="pill accent">{step === 'close_interaction' ? 'closing' : 'in progress'}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="panel">
+            <h3>Audit summary</h3>
+            {auditSummary.length === 0 ? (
+              <p className="muted">No actions yet.</p>
+            ) : (
+              <ul className="list-clean">
+                {auditSummary.map((s, i) => (
+                  <li key={i} className="row between">
+                    <span>{s}</span>
+                    <span className="pill ok">audited</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>
-      )}
-
-      <div className="panel">
-        <h3>Audit summary</h3>
-        {auditSummary.length === 0 ? (
-          <p className="muted">No actions yet.</p>
-        ) : (
-          <ul className="list-clean">
-            {auditSummary.map((s, i) => (
-              <li key={i} className="row between">
-                <span>{s}</span>
-                <span className="pill ok">audited</span>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
+
+      <details style={{ marginTop: 16 }}>
+        <summary className="muted" style={{ cursor: 'pointer', fontSize: 12 }}>
+          Developer note
+        </summary>
+        <p className="muted" style={{ marginTop: 8, fontSize: 12 }}>
+          The web client sends <code>x-legacyops-role: admin</code> so the demo can access every endpoint. This is
+          demo-only and will be replaced by real SSO/OIDC/SAML (issue #1).
+        </p>
+      </details>
     </div>
   );
 }

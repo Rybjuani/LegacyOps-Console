@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { Case, Customer } from '@legacyops/domain';
+import { SectionHeader } from '../components/ui';
 
 export function SupervisorPage() {
   const [cases, setCases] = useState<Case[]>([]);
@@ -23,8 +24,10 @@ export function SupervisorPage() {
 
   return (
     <div>
-      <h1 className="page-title">Supervisor Dashboard</h1>
-      <p className="page-subtitle">Team performance, SLA risk, escalations and audit visibility.</p>
+      <SectionHeader
+        title="Supervisor Dashboard"
+        subtitle="Team performance, SLA risk, escalations and audit visibility."
+      />
 
       <div className="grid grid-4 mb">
         <div className="panel kpi">

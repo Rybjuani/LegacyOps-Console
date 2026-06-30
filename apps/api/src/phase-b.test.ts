@@ -181,7 +181,7 @@ describe('LegacyOps API — Phase B endpoints', () => {
     expect(event.metadata.reason).toBe('customer abandoned the call');
   });
 
-  it('operator cannot cancel a workflow run owned by another operator (RBAC workflow:run allowed)', async () => {
+  it('operator can cancel a workflow run (RBAC workflow:run allowed)', async () => {
     // operator has workflow:run permission, so cancel should succeed.
     const customerList = await app.inject({
       method: 'GET',

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import type { Account, Case, ContactMethod, Contract, Customer, DebtRecord, Service } from '@legacyops/domain';
+import { DataSourceBadge, ErrorState, LoadingState, SectionHeader, type DataSourceBadgeKind } from '../components/ui';
 
 interface Customer360 {
   customer: Customer;
@@ -12,26 +13,17 @@ interface Customer360 {
   debts: DebtRecord[];
 }
 
-function SourceBadge({
-  source
-}: {
-  source: 'legacyops_native' | 'fake_siebel_lab' | 'billing_mock' | 'migration_mapped' | 'synthetic_dataset';
-}) {
-  const labels: Record<string, string> = {
-    legacyops_native: 'LegacyOps',
-    fake_siebel_lab: 'Siebel Lab',
-    billing_mock: 'Billing mock',
-    migration_mapped: 'Migration-mapped',
-    synthetic_dataset: 'Synthetic'
-  };
-  const classes: Record<string, string> = {
-    legacyops_native: 'pill accent',
-    fake_siebel_lab: 'pill ok',
-    billing_mock: 'pill warn',
-    migration_mapped: 'pill accent',
-    synthetic_dataset: 'pill'
-  };
-  return <span className={classes[source]}>{labels[source]}</span>;
+function sourceForCustomer(c: Customer): DataSourceBadgeKind {
+  return c.externalId ? 'legacy' : 'native';
+}
+function sourceForAccount(a: Account): DataSourceBadgeKind {
+  return a.externalId ? 'legacy' : 'native';
+}
+function sourceForService(s: Service): DataSourceBadgeKind {
+  return s.externalId ? 'legacy' : 'native';
+}
+function sourceForCase(c: Case): DataSourceBadgeKind {
+  return c.externalId ? 'mapped' : 'native';
 }
 
 export function Customer360Page() {
@@ -46,52 +38,93 @@ export function Customer360Page() {
     totalDue: number;
     currency: string;
   } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
-    api.get<Customer360>(`/customers/${id}`).then(setData);
-    api.get<{ items: Case[] }>(`/customers/${id}/cases`).then((r) => setCases(r.items));
-    api.get<{ items: { kind: string; at: string; item: unknown }[] }>(`/customers/${id}/timeline`).then(setTimeline);
-    api
-      .get<{ invoices: unknown[]; payments: unknown[]; debts: unknown[]; totalDue: number; currency: string }>(
+    setErr(null);
+    Promise.all([
+      api.get<Customer360>(`/customers/${id}`),
+      api.get<{ items: Case[] }>(`/customers/${id}/cases`),
+      api.get<{ items: { kind: string; at: string; item: unknown }[] }>(`/customers/${id}/timeline`),
+      api.get<{ invoices: unknown[]; payments: unknown[]; debts: unknown[]; totalDue: number; currency: string }>(
         `/customers/${id}/billing`
       )
-      .then(setBilling);
+    ])
+      .then(([d, c, t, b]) => {
+        setData(d);
+        setCases(c.items);
+        setTimeline(t);
+        setBilling(b);
+      })
+      .catch((e) => setErr(String(e)));
   }, [id]);
 
-  if (!data) return <div className="muted">Loading…</div>;
+  if (err) return <ErrorState message={err} />;
+  if (!data) return <LoadingState />;
   const c = data.customer;
 
   return (
     <div>
       <div className="row between">
-        <div>
-          <h1 className="page-title">
-            {c.displayName} <SourceBadge source={c.externalId ? 'fake_siebel_lab' : 'legacyops_native'} />
-          </h1>
-          <p className="page-subtitle">
-            <span className="pill accent" style={{ marginRight: 8 }}>
-              {c.segment}
-            </span>
-            {c.riskFlags.map((f) => (
-              <span key={f} className="pill warn" style={{ marginRight: 8 }}>
-                {f}
-              </span>
-            ))}
-            <span className="muted">Customer ID: {c.id}</span>
-            {c.externalId && (
-              <span className="muted" style={{ marginLeft: 12 }}>
-                External ID (legacy): {c.externalId}
-              </span>
-            )}
-          </p>
-        </div>
+        <SectionHeader title={c.displayName} subtitle={`Customer ID: ${c.id}`} />
         <Link to="/customers" className="btn secondary">
           ← Back to search
         </Link>
       </div>
 
+      <div className="mb">
+        <span className="pill accent" style={{ marginRight: 8 }}>
+          {c.segment}
+        </span>
+        {c.riskFlags.map((f) => (
+          <span key={f} className="pill warn" style={{ marginRight: 8 }}>
+            {f.replace(/_/g, ' ')}
+          </span>
+        ))}
+        {c.externalId && (
+          <span className="muted" style={{ marginRight: 12 }}>
+            External ID (legacy): {c.externalId}
+          </span>
+        )}
+        <DataSourceBadge kind={sourceForCustomer(c)} />
+      </div>
+
+      <p className="muted mb" style={{ fontSize: 12 }}>
+        Data source badges show where this information comes from during a migration: <strong>Native</strong>{' '}
+        (LegacyOps), <strong>Legacy</strong> (Siebel-like), <strong>Mapped</strong> (migrated from legacy).
+      </p>
+
       <div className="grid grid-2 mb">
+        <div className="panel">
+          <h3>Identity</h3>
+          <table>
+            <tbody>
+              <tr>
+                <th>Display name</th>
+                <td>{c.displayName}</td>
+              </tr>
+              <tr>
+                <th>Document</th>
+                <td className="muted">{c.documentNumber ?? '—'}</td>
+              </tr>
+              <tr>
+                <th>Email</th>
+                <td className="muted">{c.email ?? '—'}</td>
+              </tr>
+              <tr>
+                <th>Phone</th>
+                <td className="muted">{c.phone ?? '—'}</td>
+              </tr>
+              <tr>
+                <th>Source</th>
+                <td>
+                  <DataSourceBadge kind={sourceForCustomer(c)} />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <div className="panel">
           <h3>Account</h3>
           <table>
@@ -116,38 +149,20 @@ export function Customer360Page() {
                 <th>External ID</th>
                 <td className="muted">{data.account.externalId ?? '—'}</td>
               </tr>
+              <tr>
+                <th>Source</th>
+                <td>
+                  <DataSourceBadge kind={sourceForAccount(data.account)} />
+                </td>
+              </tr>
             </tbody>
           </table>
-        </div>
-        <div className="panel">
-          <h3>Contact methods</h3>
-          <ul className="list-clean">
-            {data.contactMethods.map((cm) => (
-              <li key={cm.id} className="row between">
-                <span>
-                  {cm.type}: <strong>{cm.value}</strong>
-                </span>
-                <span>
-                  {cm.primary && (
-                    <span className="pill accent" style={{ marginRight: 4 }}>
-                      primary
-                    </span>
-                  )}
-                  {cm.verified ? (
-                    <span className="pill ok">verified</span>
-                  ) : (
-                    <span className="pill warn">unverified</span>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
 
       <div className="grid grid-2 mb">
         <div className="panel">
-          <h3>Services & Contracts</h3>
+          <h3>Services / Assets</h3>
           <table>
             <thead>
               <tr>
@@ -166,7 +181,7 @@ export function Customer360Page() {
                   </td>
                   <td className="muted">{s.activatedAt.slice(0, 10)}</td>
                   <td>
-                    <SourceBadge source={s.externalId ? 'fake_siebel_lab' : 'legacyops_native'} />
+                    <DataSourceBadge kind={sourceForService(s)} />
                   </td>
                 </tr>
               ))}
@@ -174,7 +189,7 @@ export function Customer360Page() {
           </table>
         </div>
         <div className="panel">
-          <h3>Billing summary</h3>
+          <h3>Billing</h3>
           {billing ? (
             <>
               <div className="grid grid-2">
@@ -198,25 +213,24 @@ export function Customer360Page() {
                 </div>
               </div>
               <p className="muted" style={{ marginTop: 8 }}>
-                <SourceBadge source="billing_mock" /> Billing data served by the synthetic billing mock.
+                <DataSourceBadge kind="synthetic" /> Billing data served by the synthetic billing mock.
               </p>
             </>
           ) : (
-            <span className="muted">Loading…</span>
+            <LoadingState />
           )}
         </div>
       </div>
 
       <div className="grid grid-2 mb">
         <div className="panel">
-          <h3>Cases ({cases.length})</h3>
+          <h3>Open Cases ({cases.length})</h3>
           <table>
             <thead>
               <tr>
                 <th>Subject</th>
                 <th>Status</th>
                 <th>Priority</th>
-                <th>Category</th>
                 <th>Source</th>
               </tr>
             </thead>
@@ -234,15 +248,14 @@ export function Customer360Page() {
                       {cs.priority}
                     </span>
                   </td>
-                  <td className="muted">{cs.category}</td>
                   <td>
-                    <SourceBadge source={cs.externalId ? 'migration_mapped' : 'legacyops_native'} />
+                    <DataSourceBadge kind={sourceForCase(cs)} />
                   </td>
                 </tr>
               ))}
               {cases.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="muted">
+                  <td colSpan={4} className="muted">
                     No cases for this customer.
                   </td>
                 </tr>
@@ -251,32 +264,58 @@ export function Customer360Page() {
           </table>
         </div>
         <div className="panel">
-          <h3>Interaction timeline</h3>
-          {timeline ? (
-            timeline.items.length === 0 ? (
-              <p className="muted">No interactions recorded for this customer.</p>
-            ) : (
-              <ul className="list-clean">
-                {timeline.items.slice(0, 12).map((it, i) => {
-                  const item = it.item as { subject?: string; reason?: string; summary?: string };
-                  return (
-                    <li key={i} className="row between">
-                      <span>
-                        <span className="pill accent" style={{ marginRight: 8 }}>
-                          {it.kind}
-                        </span>
-                        {item.subject ?? item.reason ?? item.summary ?? '—'}
+          <h3>Recent Interactions</h3>
+          {timeline && timeline.items.length > 0 ? (
+            <ul className="list-clean">
+              {timeline.items.slice(0, 12).map((it, i) => {
+                const item = it.item as { subject?: string; reason?: string; summary?: string };
+                return (
+                  <li key={i} className="row between">
+                    <span>
+                      <span className="pill accent" style={{ marginRight: 8 }}>
+                        {it.kind}
                       </span>
-                      <span className="muted">{it.at.slice(0, 16).replace('T', ' ')}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )
+                      {item.subject ?? item.reason ?? item.summary ?? '—'}
+                    </span>
+                    <span className="muted">{it.at.slice(0, 16).replace('T', ' ')}</span>
+                  </li>
+                );
+              })}
+            </ul>
           ) : (
-            <span className="muted">Loading…</span>
+            <p className="muted">No interactions recorded for this customer.</p>
           )}
         </div>
+      </div>
+
+      <div className="panel">
+        <h3>Risk Signals</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Signal</th>
+              <th>Level</th>
+            </tr>
+          </thead>
+          <tbody>
+            {c.riskFlags.length === 0 ? (
+              <tr>
+                <td colSpan={2} className="muted">
+                  No risk signals.
+                </td>
+              </tr>
+            ) : (
+              c.riskFlags.map((f) => (
+                <tr key={f}>
+                  <td>{f.replace(/_/g, ' ')}</td>
+                  <td>
+                    <span className="pill warn">active</span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
