@@ -17,3 +17,13 @@ export * from './mock/FakeSiebelAdapter.js';
 export * from './mock/FakeSiebelSession.js';
 export * from './mock/FakeSiebelErrorSimulator.js';
 export * from './mock/FakeSiebelMetadataProvider.js';
+// Real adapter foundation — see docs/REAL_SIEBEL_ADAPTER.md
+export * from './real/RealSiebelConfig.js';
+export * from './real/RealSiebelEndpointMap.js';
+export * from './real/SiebelRestHttpClient.js';
+export * from './real/SiebelRestErrorMapper.js';
+export * from './real/RetryPolicy.js';
+export * from './real/CircuitBreaker.js';
+export * from './real/SiebelRestSessionManager.js';
+export * from './real/RealSiebelPayloadMapper.js';
+export * from './real/RealSiebelAdapter.js';

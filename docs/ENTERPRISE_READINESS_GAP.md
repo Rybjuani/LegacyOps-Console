@@ -117,7 +117,13 @@ It is **not** suitable for production use with real customer data.
 
 ### 2.8 Real integrations
 
-- ❌ No real Siebel REST adapter (only the Fake Siebel Lab).
+- ✅ `RealSiebelAdapter` foundation implemented behind `SiebelBridge`
+  contract (config loader, HTTP client, retry, circuit breaker, error
+  mapper, session manager, defensive payload mapper, adapter). Tested
+  against mocked REST behaviour.
+- ❌ Validation against a real Siebel sandbox still pending (issue #4).
+  The adapter is NOT enabled by default; `LEGACYOPS_SIEBEL_ADAPTER=real`
+  is required, plus a valid `RealSiebelConfig`.
 - ❌ No real billing provider adapter.
 - ❌ No real auth provider adapter.
 - ❌ No real knowledge base adapter.

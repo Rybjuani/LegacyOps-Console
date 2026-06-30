@@ -130,9 +130,10 @@ Last verified on the commit referenced in `git log` for the
 | Synthetic data only | ✅ |
 | No secrets in repo (CI scans for github_pat_, ghp_, AKIA, xoxb-, private key blocks) | ✅ |
 | Enterprise readiness issues | ✅ 5 issues opened (#1–#5) |
+| Real Siebel REST adapter foundation | ✅ Shipped (mock-tested, not sandbox-validated) |
 | Real database | ❌ pending (issue #2) |
 | Real SSO/OIDC/SAML | ❌ pending (issue #1) |
-| Real Siebel REST adapter | ❌ pending (issue #4) |
+| Real Siebel sandbox validation | ❌ pending (issue #4) |
 | Durable append-only audit log | ❌ pending (issue #3) |
 | Container image + Helm chart | ❌ pending (issue #5) |
 | Production deployment | ❌ pending |
@@ -300,6 +301,17 @@ See `docs/MIGRATION_STRATEGY.md` and `docs/INTEGRATION_MODES.md`.
 | `docs/ENTERPRISE_READINESS_GAP.md` | Honest gap analysis. |
 | `docs/INTEGRATION_MODES.md` | Seven integration modes. |
 | `docs/FAKE_SIEBEL_LAB.md` | Fake Siebel Lab specification. |
+| `docs/FAKE_SIEBEL_ERROR_MODEL.md` | Fake Siebel error simulation model. |
+| `docs/SIEBEL_BRIDGE_CONTRACTS.md` | Siebel bridge contracts (DTOs, transports, mapping). |
+| `docs/REAL_SIEBEL_ADAPTER.md` | Real Siebel REST adapter foundation. |
+| `docs/SIEBEL_REST_ADAPTER_TESTING.md` | How the real adapter is tested. |
+| `docs/SIEBEL_SANDBOX_ONBOARDING.md` | What to ask a customer for a sandbox pilot. |
+| `docs/PRODUCT_REQUIREMENTS.md` | Product requirements. |
+| `docs/MVP_DEFINITION.md` | MVP definition. |
+| `docs/ENTERPRISE_PILOT_CHECKLIST.md` | Enterprise pilot checklist. |
+| `docs/SALES_DEMO_SCRIPT.md` | 30-minute sales demo script. |
+| `docs/SIEBEL_MODERNIZATION_ROI_MODEL.md` | ROI model with risk-adjusted return. |
+| `docs/TECHNICAL_DUE_DILIGENCE.md` | Buyer's technical review checklist. |
 | `ROADMAP.md` | Roadmap. |
 | `CONTRIBUTING.md` | Contributing guide. |
 
@@ -311,15 +323,18 @@ See `docs/MIGRATION_STRATEGY.md` and `docs/INTEGRATION_MODES.md`.
 - ✅ 10 packages: domain, shared, audit, permissions, workflows, adapters, siebel-bridge, migration, legacy-observability, demo-data.
 - ✅ Fastify v5 API with all required endpoints + simulated RBAC enforcement.
 - ✅ React + Vite UI with 12 panels.
-- ✅ 103 Vitest tests (79 unit + 24 HTTP smoke tests via Fastify `inject`).
+- ✅ 266 Vitest tests (240 unit + 26 HTTP smoke tests via Fastify `inject`).
 - ✅ ESLint 9 flat config + Prettier — both clean.
 - ✅ GitHub Actions CI (Node 22) — 4 jobs: verify, format-check, secret-scan-lite, dependency-audit.
 - ✅ `pnpm audit --prod --audit-level=high` clean (0 vulnerabilities).
 - ✅ SECURITY.md, PR template, issue templates.
 - ✅ 5 enterprise-readiness issues opened (#1 SSO, #2 PostgreSQL, #3 durable audit, #4 real Siebel adapter, #5 container image).
-- ✅ Strategic documentation set (18 docs).
+- ✅ RealSiebelAdapter foundation: config, HTTP client, retry, circuit breaker, error mapper, session manager, defensive payload mapper, adapter — all mock-tested.
+- ✅ Siebel adapter diagnostic endpoints: `/siebel/adapter/status`, `/siebel/adapter/config-schema`, `/siebel/adapter/endpoint-map`.
+- ✅ Strategic documentation set (29 docs).
 - ⚠️ Synthetic data only.
-- ⚠️ No real database, no real Siebel adapter, no SSO/OIDC/SAML, no production hardening.
+- ⚠️ RealSiebelAdapter NOT validated against a real Siebel sandbox (issue #4 open).
+- ⚠️ No real database, no SSO/OIDC/SAML, no production hardening.
 - ❌ Not production-ready. See `docs/ENTERPRISE_READINESS_GAP.md`.
 
 ---

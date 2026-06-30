@@ -124,7 +124,32 @@ See `docs/FAKE_SIEBEL_LAB.md` for the full specification.
 
 ---
 
-## 7. Implementation status
+## 7. Real Siebel Adapter (foundation)
+
+The `real/` directory contains a production-shaped REST adapter that
+implements the full `SiebelBridge` contract:
+
+- `RealSiebelConfig` — typed config + env loader + `redactConfig()`.
+- `RealSiebelEndpointMap` — configurable REST paths with `{id}` placeholders.
+- `SiebelRestHttpClient` — HTTP client with timeout, retry, circuit breaker.
+- `SiebelRestErrorMapper` — maps HTTP errors + SBL-* codes to structured errors.
+- `RetryPolicy` — pure retry helper with deterministic backoff.
+- `CircuitBreaker` — closed/open/half_open state machine.
+- `SiebelRestSessionManager` — session lifecycle for `authMode=session`.
+- `RealSiebelPayloadMapper` — defensive raw-payload → DTO mapping.
+- `RealSiebelAdapter` — aggregates all of the above into `SiebelBridge`.
+
+**Status:** foundation implemented and tested against mocked REST behaviour.
+Validation against a real Siebel sandbox is still pending — see issue #4
+and `docs/REAL_SIEBEL_ADAPTER.md`.
+
+The adapter does NOT replace the Fake Siebel Lab. Both coexist; the API
+selects which one to use via `LEGACYOPS_SIEBEL_ADAPTER` env var (default:
+`fake`).
+
+---
+
+## 8. Implementation status
 
 | Contract | Status |
 |---|---|
@@ -132,19 +157,25 @@ See `docs/FAKE_SIEBEL_LAB.md` for the full specification.
 | `SiebelBridge` aggregate | ✅ Shipped |
 | Transport contracts | ✅ Defined (interfaces only) |
 | `FakeSiebelAdapter` | ✅ Shipped |
-| `RealSiebelAdapter` | ❌ Pending (issue #4) |
+| `RealSiebelAdapter` foundation | ✅ Shipped (mock-tested) |
+| `RealSiebelAdapter` sandbox validation | ❌ Pending (issue #4) |
 | Mapping helpers | ✅ Shipped |
+| Real payload mapper (defensive) | ✅ Shipped |
 | Deterministic error simulation | ✅ Shipped |
 | Stochastic error simulation | ✅ Shipped |
 
 ---
 
-## 8. Reference
+## 9. Reference
 
 - `packages/siebel-bridge/src/contracts/`
 - `packages/siebel-bridge/src/mapping/`
 - `packages/siebel-bridge/src/mock/`
+- `packages/siebel-bridge/src/real/`
 - `docs/SIEBEL_OBJECT_MAPPING.md`
 - `docs/FAKE_SIEBEL_LAB.md`
 - `docs/FAKE_SIEBEL_ERROR_MODEL.md`
+- `docs/REAL_SIEBEL_ADAPTER.md`
+- `docs/SIEBEL_REST_ADAPTER_TESTING.md`
+- `docs/SIEBEL_SANDBOX_ONBOARDING.md`
 - `docs/ANTI_CORRUPTION_LAYER.md`
