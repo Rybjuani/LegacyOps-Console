@@ -97,7 +97,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance, state: AppSta
   // ---------- Cancel workflow run (B5) ----------
   app.post('/workflow-runs/:id/cancel', { preHandler: withPermission('workflow:run') }, async (req, reply) => {
     const id = (req.params as { id: string }).id;
-    const body = req.body as { agentId?: string; actorRole?: string } | null;
+    const body = req.body as { agentId?: string; actorRole?: string; reason?: string } | null;
     const role = (req as unknown as { role: string }).role;
     const actorId = (req as unknown as { actorId: string }).actorId;
     const run = state.dataset.workflowRuns.find((r) => r.id === id);
@@ -107,19 +107,14 @@ export async function registerWorkflowRoutes(app: FastifyInstance, state: AppSta
       const cancelled = cancelWorkflowRun(run);
       const idx = state.dataset.workflowRuns.findIndex((r) => r.id === id);
       state.dataset.workflowRuns[idx] = cancelled;
-      // Append a workflow.cancelled audit event. The audit package does
-      // not yet expose a dedicated builder for this, so we use the
-      // generic createAuditEvent via the AuditEvents namespace pattern.
-      state.auditLog.append({
-        ...AuditEvents.workflowStarted(
+      state.auditLog.append(
+        AuditEvents.workflowCancelled(
           (body?.agentId ?? actorId ?? 'usr_operator1') as never,
           body?.actorRole ?? role,
           cancelled.id,
-          cancelled.workflowId,
-          cancelled.customerId
-        ),
-        type: 'workflow.cancelled'
-      });
+          body?.reason
+        )
+      );
       return { ok: true, data: cancelled };
     } catch (e) {
       return reply.status(400).send({ ok: false, error: { code: 'BAD_REQUEST', message: (e as Error).message } });

@@ -163,6 +163,15 @@ export const AuditEvents = {
       metadata: { stepId }
     }),
 
+  workflowCancelled: (actorId: UserId, actorRole: string, runId: string, reason?: string): AuditEvent =>
+    createAuditEvent({
+      type: 'workflow.cancelled',
+      actorId,
+      actorRole,
+      target: { kind: 'WorkflowRun', id: runId },
+      metadata: { workflowRunId: runId, reason }
+    }),
+
   permissionDenied: (actorId: UserId, actorRole: string, permission: string, resource?: string): AuditEvent =>
     createAuditEvent({
       type: 'permission.denied',

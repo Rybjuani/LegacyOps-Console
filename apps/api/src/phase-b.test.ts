@@ -138,6 +138,74 @@ describe('LegacyOps API — Phase B endpoints', () => {
     expect(cancel.json().data.status).toBe('cancelled');
   });
 
+  it('POST /workflow-runs/:id/cancel records a workflow.cancelled audit event with reason', async () => {
+    const customerList = await app.inject({
+      method: 'GET',
+      url: '/customers?pageSize=1',
+      headers: ADMIN_HEADER
+    });
+    const customerId = customerList.json().items[0].id;
+    const start = await app.inject({
+      method: 'POST',
+      url: '/workflows/wf_billing_claim/start',
+      headers: { ...ADMIN_HEADER, 'content-type': 'application/json' },
+      payload: JSON.stringify({ customerId })
+    });
+    const runId = start.json().data.id;
+
+    const cancel = await app.inject({
+      method: 'POST',
+      url: `/workflow-runs/${runId}/cancel`,
+      headers: { ...ADMIN_HEADER, 'content-type': 'application/json' },
+      payload: JSON.stringify({ reason: 'customer abandoned the call' })
+    });
+    expect(cancel.statusCode).toBe(200);
+    expect(cancel.json().data.status).toBe('cancelled');
+
+    // Verify the audit log contains a workflow.cancelled event for this run
+    // with the reason recorded in metadata.
+    const auditRes = await app.inject({
+      method: 'GET',
+      url: `/audit-events?type=workflow.cancelled`,
+      headers: { 'x-legacyops-role': 'auditor' }
+    });
+    expect(auditRes.statusCode).toBe(200);
+    const body = auditRes.json();
+    const events = body.items.filter(
+      (e: { type: string; metadata: { workflowRunId?: string; reason?: string } }) =>
+        e.type === 'workflow.cancelled' && e.metadata?.workflowRunId === runId
+    );
+    expect(events.length).toBeGreaterThan(0);
+    const event = events[events.length - 1];
+    expect(event.metadata.workflowRunId).toBe(runId);
+    expect(event.metadata.reason).toBe('customer abandoned the call');
+  });
+
+  it('operator cannot cancel a workflow run owned by another operator (RBAC workflow:run allowed)', async () => {
+    // operator has workflow:run permission, so cancel should succeed.
+    const customerList = await app.inject({
+      method: 'GET',
+      url: '/customers?pageSize=1',
+      headers: ADMIN_HEADER
+    });
+    const customerId = customerList.json().items[0].id;
+    const start = await app.inject({
+      method: 'POST',
+      url: '/workflows/wf_payment_promise/start',
+      headers: { ...ADMIN_HEADER, 'content-type': 'application/json' },
+      payload: JSON.stringify({ customerId })
+    });
+    const runId = start.json().data.id;
+    const cancel = await app.inject({
+      method: 'POST',
+      url: `/workflow-runs/${runId}/cancel`,
+      headers: { ...OPERATOR_HEADER, 'content-type': 'application/json' },
+      payload: '{}'
+    });
+    expect(cancel.statusCode).toBe(200);
+    expect(cancel.json().data.status).toBe('cancelled');
+  });
+
   it('GET /workflow-runs/:id/can-complete/:stepId respects requiredRole', async () => {
     const customerList = await app.inject({
       method: 'GET',

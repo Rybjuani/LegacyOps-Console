@@ -34,4 +34,25 @@ describe('audit event creation', () => {
     );
     expect(e.metadata).toMatchObject({ adapter: 'siebel-bridge', durationMs: 120, success: true });
   });
+
+  it('creates a workflow.cancelled event with runId', () => {
+    const e = AuditEvents.workflowCancelled('usr_op1' as never, 'operator', 'wfr_123');
+    expect(e.type).toBe('workflow.cancelled');
+    expect(e.target?.id).toBe('wfr_123');
+    expect(e.metadata).toMatchObject({ workflowRunId: 'wfr_123', reason: undefined });
+  });
+
+  it('creates a workflow.cancelled event with reason', () => {
+    const e = AuditEvents.workflowCancelled(
+      'usr_op1' as never,
+      'operator',
+      'wfr_456',
+      'customer requested cancellation'
+    );
+    expect(e.type).toBe('workflow.cancelled');
+    expect(e.metadata).toMatchObject({
+      workflowRunId: 'wfr_456',
+      reason: 'customer requested cancellation'
+    });
+  });
 });
