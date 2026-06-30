@@ -45,7 +45,7 @@ export function DashboardPage() {
 
   return (
     <div>
-      <SectionHeader title="Today's Operations" subtitle="A quick snapshot of what is happening right now." />
+      <SectionHeader title="Today's Operations" subtitle="Modern operating layer for legacy CRM complexity." />
 
       <div className="grid grid-4 mb">
         <div className="panel kpi">

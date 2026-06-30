@@ -91,8 +91,10 @@ export function Customer360Page() {
       </div>
 
       <p className="muted mb" style={{ fontSize: 12 }}>
-        Data source badges show where this information comes from during a migration: <strong>Native</strong>{' '}
-        (LegacyOps), <strong>Legacy</strong> (Siebel-like), <strong>Mapped</strong> (migrated from legacy).
+        <strong>Data source legend:</strong> <DataSourceBadge kind="native" /> = stored in LegacyOps &nbsp;|&nbsp;
+        <DataSourceBadge kind="legacy" /> = read from legacy/Siebel-like source &nbsp;|&nbsp;
+        <DataSourceBadge kind="mapped" /> = transformed through migration mapping &nbsp;|&nbsp;
+        <DataSourceBadge kind="synthetic" /> = demo data
       </p>
 
       <div className="grid grid-2 mb">

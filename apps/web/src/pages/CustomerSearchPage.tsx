@@ -24,7 +24,11 @@ export function CustomerSearchPage() {
 
   return (
     <div>
-      <SectionHeader title="Customer Search" subtitle="Search across residential, business and VIP customers." />
+      <SectionHeader
+        title="Customer Search"
+        subtitle="Search across residential, business and VIP customers."
+        help="Use Search to load demo customers or filter by name, segment or risk."
+      />
 
       <div className="panel mb">
         <div className="row">

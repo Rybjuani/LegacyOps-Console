@@ -171,9 +171,10 @@ export function InteractionConsolePage() {
         <div className="stepper">
           {STEP_LABELS.map(([s, label, help]) => {
             const isDone = auditSummary.some((a) => a.toLowerCase().includes(label.toLowerCase().split(' ')[0]));
+            const isCurrent = step === s;
             return (
-              <div key={s} className={`step ${step === s ? 'active' : isDone ? 'completed' : ''}`}>
-                <div className="step-id">{s}</div>
+              <div key={s} className={`step ${isCurrent ? 'active' : isDone ? 'completed' : ''}`}>
+                <div className="step-id">{isDone ? '✓' : s.replace(/_/g, ' ')}</div>
                 <div className="step-label">{label}</div>
                 <div className="muted" style={{ fontSize: 11 }}>
                   {help}
@@ -351,7 +352,9 @@ export function InteractionConsolePage() {
               <tbody>
                 <tr>
                   <th>Customer</th>
-                  <td className="muted">{customerId || '—'}</td>
+                  <td className="muted">
+                    {customerId ? (customers.find((c) => c.id === customerId)?.displayName ?? customerId) : '—'}
+                  </td>
                 </tr>
                 <tr>
                   <th>Channel</th>
@@ -372,7 +375,13 @@ export function InteractionConsolePage() {
                 <tr>
                   <th>Status</th>
                   <td>
-                    <span className="pill accent">{step === 'close_interaction' ? 'closing' : 'in progress'}</span>
+                    <span
+                      className={`pill ${step === 'close_interaction' && auditSummary.some((a) => a.includes('closed')) ? 'ok' : 'accent'}`}
+                    >
+                      {step === 'close_interaction' && auditSummary.some((a) => a.includes('closed'))
+                        ? 'Closed'
+                        : 'In progress'}
+                    </span>
                   </td>
                 </tr>
               </tbody>
